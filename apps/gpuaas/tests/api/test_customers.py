@@ -5,7 +5,6 @@ from httpx import ASGITransport, AsyncClient
 
 from apps.gpuaas.app.api.dependencies import get_db
 from apps.gpuaas.app.main import app
-from apps.gpuaas.app.models.customer import Customer
 
 
 @pytest.fixture

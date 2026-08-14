@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from apps.gpuaas.app.api.routes.allocations import router as allocations_router
 from apps.gpuaas.app.api.routes.capacity import router as capacity_router
 from apps.gpuaas.app.api.routes.customers import router as customers_router
+from apps.gpuaas.app.api.routes.jobs import router as jobs_router
 
 app = FastAPI(
     title="GPUFlow GPUaaS",
@@ -22,6 +23,11 @@ app.include_router(
 
 app.include_router(
     capacity_router,
+    prefix="/api/v1",
+)
+
+app.include_router(
+    jobs_router,
     prefix="/api/v1",
 )
 
