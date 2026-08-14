@@ -16,9 +16,7 @@ class UsageEventRepository:
         event_id: str,
     ) -> GPUUsageEvent | None:
         result = await self.session.execute(
-            select(GPUUsageEvent).where(
-                GPUUsageEvent.event_id == event_id
-            )
+            select(GPUUsageEvent).where(GPUUsageEvent.event_id == event_id)
         )
         return result.scalar_one_or_none()
 

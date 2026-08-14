@@ -51,28 +51,19 @@ class UsageEventService:
         customer = await self.customers.get_by_id(data.customer_id)
 
         if customer is None:
-            raise CustomerNotFoundError(
-                f"Customer '{data.customer_id}' not found"
-            )
+            raise CustomerNotFoundError(f"Customer '{data.customer_id}' not found")
 
-        allocation = await self.allocations.get_by_id(
-            data.allocation_id
-        )
+        allocation = await self.allocations.get_by_id(data.allocation_id)
 
         if allocation is None:
-            raise AllocationNotFoundError(
-                f"Allocation '{data.allocation_id}' not found"
-            )
+            raise AllocationNotFoundError(f"Allocation '{data.allocation_id}' not found")
 
         if allocation.customer_id != data.customer_id:
-            raise AllocationOwnershipError(
-                "Allocation does not belong to the specified customer"
-            )
+            raise AllocationOwnershipError("Allocation does not belong to the specified customer")
 
         if allocation.gpu_type != data.gpu_type:
             raise GPUMismatchError(
-                f"GPU type mismatch: allocation={allocation.gpu_type}, "
-                f"event={data.gpu_type}"
+                f"GPU type mismatch: allocation={allocation.gpu_type}, event={data.gpu_type}"
             )
 
         event = GPUUsageEvent(
@@ -92,9 +83,7 @@ class UsageEventService:
         except IntegrityError:
             await self.session.rollback()
 
-            existing = await self.events.get_by_event_id(
-                data.event_id
-            )
+            existing = await self.events.get_by_event_id(data.event_id)
 
             if existing is not None:
                 return existing, False
@@ -112,9 +101,7 @@ class UsageEventService:
         customer = await self.customers.get_by_id(customer_id)
 
         if customer is None:
-            raise CustomerNotFoundError(
-                f"Customer '{customer_id}' not found"
-            )
+            raise CustomerNotFoundError(f"Customer '{customer_id}' not found")
 
         return await self.events.list_by_customer(
             customer_id=customer_id,

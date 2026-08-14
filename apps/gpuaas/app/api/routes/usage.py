@@ -89,7 +89,4 @@ async def list_customer_usage(
             detail=str(exc),
         ) from exc
 
-    return [
-        UsageEventResponse.model_validate(event)
-        for event in events
-    ]
+    return [UsageEventResponse.model_validate(event) for event in events]

@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 
 from apps.gpuaas.app.api.routes.allocations import router as allocations_router
+from apps.gpuaas.app.api.routes.analytics import router as analytics_router
 from apps.gpuaas.app.api.routes.capacity import router as capacity_router
 from apps.gpuaas.app.api.routes.customers import router as customers_router
 from apps.gpuaas.app.api.routes.jobs import router as jobs_router
@@ -19,6 +20,11 @@ app.include_router(
 
 app.include_router(
     allocations_router,
+    prefix="/api/v1",
+)
+
+app.include_router(
+    analytics_router,
     prefix="/api/v1",
 )
 
