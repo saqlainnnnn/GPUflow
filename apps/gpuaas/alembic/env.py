@@ -4,9 +4,11 @@ from alembic import context
 from sqlalchemy import create_engine, pool
 
 from apps.gpuaas.app.core.config import get_settings
+from apps.gpuaas.app.models import Base
 
 # Register all models with Base.metadata.
-from apps.gpuaas.app.models import Base, allocation, customer, job, usage_event  # noqa: F401
+from apps.gpuaas.app.models import allocation, capacity, customer, job, usage_event  # noqa: F401
+
 
 config = context.config
 
@@ -14,6 +16,8 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 target_metadata = Base.metadata
+
+VERSION_TABLE = "alembic_version_gpuaas"
 
 
 def run_migrations_offline() -> None:
@@ -25,6 +29,7 @@ def run_migrations_offline() -> None:
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
         compare_type=True,
+        version_table=VERSION_TABLE,
     )
 
     with context.begin_transaction():
@@ -44,6 +49,7 @@ def run_migrations_online() -> None:
             connection=connection,
             target_metadata=target_metadata,
             compare_type=True,
+            version_table=VERSION_TABLE,
         )
 
         with context.begin_transaction():

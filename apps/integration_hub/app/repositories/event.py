@@ -24,16 +24,6 @@ class EventRepository:
 
         return result.scalar_one_or_none()
 
-    async def create(
-        self,
-        event: IntegrationEvent,
-    ) -> IntegrationEvent:
-        self.session.add(event)
-        await self.session.flush()
-        await self.session.refresh(event)
-
-        return event
-
     async def get_by_id(
         self,
         event_id: UUID,
@@ -43,3 +33,29 @@ class EventRepository:
         )
 
         return result.scalar_one_or_none()
+
+    async def create(
+        self,
+        event: IntegrationEvent,
+    ) -> IntegrationEvent:
+        self.session.add(event)
+        await self.session.flush()
+        await self.session.refresh(event)
+        return event
+
+    async def update_status(
+        self,
+        event: IntegrationEvent,
+        status: str,
+        retry_count: int | None = None,
+        last_error: str | None = None,
+    ) -> IntegrationEvent:
+        event.status = status
+
+        if retry_count is not None:
+            event.retry_count = retry_count
+
+        event.last_error = last_error
+
+        await self.session.flush()
+        return event

@@ -1,9 +1,19 @@
+from uuid import UUID
+
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from apps.integration_hub.app.models.event import IntegrationEvent
 from apps.integration_hub.app.repositories.event import EventRepository
 from apps.integration_hub.app.schemas.event import EventCreate
+
+
+class EventNotFoundError(Exception):
+    pass
+
+
+class EventNotReplayableError(Exception):
+    pass
 
 
 class EventService:
@@ -49,3 +59,24 @@ class EventService:
             raise
 
         return event, True
+
+    async def replay(
+        self,
+        event_id: UUID,
+    ) -> IntegrationEvent:
+        event = await self.repository.get_by_id(event_id)
+
+        if event is None:
+            raise EventNotFoundError(f"Event '{event_id}' not found")
+
+        if event.status != "dead_letter":
+            raise EventNotReplayableError(f"Event '{event_id}' is not dead_letter")
+
+        event.status = "received"
+        event.retry_count = 0
+        event.last_error = None
+
+        await self.session.commit()
+        await self.session.refresh(event)
+
+        return event

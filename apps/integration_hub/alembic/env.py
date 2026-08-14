@@ -4,9 +4,10 @@ from alembic import context
 from sqlalchemy import create_engine, pool
 
 from apps.integration_hub.app.core.config import get_settings
-from apps.integration_hub.app.models import Base
-
-from apps.integration_hub.app.models import event  # noqa: F401
+from apps.integration_hub.app.models import (
+    Base,
+    event,  # noqa: F401
+)
 
 config = context.config
 
