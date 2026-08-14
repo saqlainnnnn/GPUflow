@@ -4,7 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from apps.gpuaas.app.api.dependencies import get_db
-from apps.gpuaas.app.schemas.customer import CustomerCreate, CustomerResponse
+from apps.gpuaas.app.schemas.customer import (
+    CustomerCreate,
+    CustomerResponse,
+)
 from apps.gpuaas.app.services.customer import (
     CustomerAlreadyExistsError,
     CustomerNotFoundError,
@@ -35,6 +38,28 @@ async def create_customer(
             status_code=status.HTTP_409_CONFLICT,
             detail=str(exc),
         ) from exc
+
+    return CustomerResponse.model_validate(customer)
+
+
+@router.put(
+    "/by-external-id/{external_id}",
+    response_model=CustomerResponse,
+)
+async def upsert_customer(
+    external_id: str,
+    data: CustomerCreate,
+    session: AsyncSession = Depends(get_db),
+) -> CustomerResponse:
+    if data.external_id != external_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=("Path external_id must match payload external_id"),
+        )
+
+    service = CustomerService(session)
+
+    customer, _ = await service.upsert_customer(data)
 
     return CustomerResponse.model_validate(customer)
 

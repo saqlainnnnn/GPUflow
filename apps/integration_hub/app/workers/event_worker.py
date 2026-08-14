@@ -7,6 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from apps.integration_hub.app.core.redis import get_redis
 from apps.integration_hub.app.db.session import AsyncSessionLocal
+from apps.integration_hub.app.integrations.pipedrive.handlers.organization import (
+    build_pipedrive_organization_handler,
+)
 from apps.integration_hub.app.repositories.event import EventRepository
 from apps.integration_hub.app.services.queue import EventQueue
 
@@ -55,11 +58,29 @@ async def handle_event(
                 event.source_event_id,
             )
 
-        else:
-            logger.warning(
-                "No handler for event type: %s",
-                event.event_type,
+        elif event.event_type in {
+            "pipedrive.organization.change",
+            "pipedrive.organization.create",
+            "pipedrive.organization.update",
+        }:
+            logger.info(
+                "Processing Pipedrive organization event: %s",
+                event.source_event_id,
             )
+
+            handler = build_pipedrive_organization_handler()
+
+            result = await handler.handle(
+                event.payload,
+            )
+
+            logger.info(
+                "Synced Pipedrive organization to GPUFlow: %s",
+                result.get("id"),
+            )
+
+        else:
+            raise ValueError(f"Unsupported event type: {event.event_type}")
 
         await repository.update_status(
             event,
@@ -96,9 +117,10 @@ async def handle_event(
                 )
 
                 logger.error(
-                    "Event %s moved to DLQ after %s attempts",
+                    "Event %s moved to DLQ after %s attempts: %s",
                     event_id,
                     retry_count,
+                    exc,
                 )
                 return
 
@@ -113,10 +135,11 @@ async def handle_event(
         backoff = BASE_BACKOFF_SECONDS**retry_count
 
         logger.warning(
-            "Event %s failed on attempt %s. Retrying in %ss",
+            "Event %s failed on attempt %s. Retrying in %ss: %s",
             event_id,
             retry_count,
             backoff,
+            exc,
         )
 
         await asyncio.sleep(backoff)

@@ -4,11 +4,16 @@ from alembic import context
 from sqlalchemy import create_engine, pool
 
 from apps.gpuaas.app.core.config import get_settings
-from apps.gpuaas.app.models import Base
 
 # Register all models with Base.metadata.
-from apps.gpuaas.app.models import allocation, capacity, customer, job, usage_event  # noqa: F401
-
+from apps.gpuaas.app.models import (  # noqa: F401
+    Base,
+    allocation,
+    capacity,
+    customer,
+    job,
+    usage_event,
+)
 
 config = context.config
 

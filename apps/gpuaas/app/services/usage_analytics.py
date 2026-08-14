@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -33,7 +33,7 @@ class UsageAnalyticsService:
         if customer is None:
             raise CustomerNotFoundError(f"Customer '{customer_id}' not found")
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         total_gpu_hours, average_utilization, event_count = await self.analytics.summary(
             customer_id

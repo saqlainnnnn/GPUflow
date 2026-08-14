@@ -1,7 +1,7 @@
 import asyncio
 import random
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
 
@@ -307,7 +307,7 @@ async def generate_customer_telemetry(
     days: int,
     rng: random.Random,
 ) -> tuple[int, int]:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     created_events = 0
     created_jobs = 0

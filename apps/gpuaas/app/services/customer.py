@@ -21,7 +21,10 @@ class CustomerService:
         self.repository = CustomerRepository(session)
         self.session = session
 
-    async def create_customer(self, data: CustomerCreate) -> Customer:
+    async def create_customer(
+        self,
+        data: CustomerCreate,
+    ) -> Customer:
         existing = await self.repository.get_by_external_id(data.external_id)
 
         if existing is not None:
@@ -48,7 +51,60 @@ class CustomerService:
 
         return customer
 
-    async def get_customer(self, customer_id: UUID) -> Customer:
+    async def upsert_customer(
+        self,
+        data: CustomerCreate,
+    ) -> tuple[Customer, bool]:
+        existing = await self.repository.get_by_external_id(data.external_id)
+
+        if existing is None:
+            customer = Customer(
+                external_id=data.external_id,
+                company_name=data.company_name,
+                email=str(data.email),
+                country=data.country.upper(),
+                status=data.status,
+            )
+
+            try:
+                customer = await self.repository.create(customer)
+                await self.session.commit()
+            except IntegrityError:
+                await self.session.rollback()
+
+                existing = await self.repository.get_by_external_id(data.external_id)
+
+                if existing is None:
+                    raise
+
+                customer = await self.repository.update(
+                    existing,
+                    company_name=data.company_name,
+                    email=str(data.email),
+                    country=data.country,
+                    status=data.status,
+                )
+
+                await self.session.commit()
+
+            return customer, True
+
+        customer = await self.repository.update(
+            existing,
+            company_name=data.company_name,
+            email=str(data.email),
+            country=data.country,
+            status=data.status,
+        )
+
+        await self.session.commit()
+
+        return customer, False
+
+    async def get_customer(
+        self,
+        customer_id: UUID,
+    ) -> Customer:
         customer = await self.repository.get_by_id(customer_id)
 
         if customer is None:
