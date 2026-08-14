@@ -55,10 +55,7 @@ async def list_customers(
         limit=limit,
     )
 
-    return [
-        CustomerResponse.model_validate(customer)
-        for customer in customers
-    ]
+    return [CustomerResponse.model_validate(customer) for customer in customers]
 
 
 @router.get(

@@ -67,9 +67,7 @@ async def test_get_customer(client):
 
     customer_id = create_response.json()["id"]
 
-    response = await client.get(
-        f"/api/v1/customers/{customer_id}"
-    )
+    response = await client.get(f"/api/v1/customers/{customer_id}")
 
     assert response.status_code == 200
 
@@ -85,9 +83,7 @@ async def test_get_customer(client):
 async def test_customer_not_found(client):
     customer_id = uuid4()
 
-    response = await client.get(
-        f"/api/v1/customers/{customer_id}"
-    )
+    response = await client.get(f"/api/v1/customers/{customer_id}")
 
     assert response.status_code == 404
 
@@ -134,16 +130,11 @@ async def test_list_customers(client):
 
     assert create_response.status_code == 201
 
-    response = await client.get(
-        "/api/v1/customers"
-    )
+    response = await client.get("/api/v1/customers")
 
     assert response.status_code == 200
 
     customers = response.json()
 
     assert isinstance(customers, list)
-    assert any(
-        customer["external_id"] == external_id
-        for customer in customers
-    )
+    assert any(customer["external_id"] == external_id for customer in customers)
