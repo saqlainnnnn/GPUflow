@@ -7,11 +7,17 @@ from apps.gpuaas.app.api.routes.allocations import (
 from apps.gpuaas.app.api.routes.analytics import (
     router as analytics_router,
 )
+from apps.gpuaas.app.api.routes.billing import (
+    router as billing_router,
+)
 from apps.gpuaas.app.api.routes.capacity import (
     router as capacity_router,
 )
 from apps.gpuaas.app.api.routes.customers import (
     router as customers_router,
+)
+from apps.gpuaas.app.api.routes.invoices import (
+    router as invoices_router,
 )
 from apps.gpuaas.app.api.routes.jobs import (
     router as jobs_router,
@@ -50,7 +56,17 @@ app.include_router(
 )
 
 app.include_router(
+    billing_router,
+    prefix="/api/v1",
+)
+
+app.include_router(
     capacity_router,
+    prefix="/api/v1",
+)
+
+app.include_router(
+    invoices_router,
     prefix="/api/v1",
 )
 

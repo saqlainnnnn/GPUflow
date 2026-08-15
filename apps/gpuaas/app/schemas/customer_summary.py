@@ -1,4 +1,3 @@
-
 from pydantic import BaseModel
 
 from apps.gpuaas.app.schemas.allocation import AllocationResponse
