@@ -1,16 +1,37 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
-from apps.gpuaas.app.api.routes.allocations import router as allocations_router
-from apps.gpuaas.app.api.routes.analytics import router as analytics_router
-from apps.gpuaas.app.api.routes.capacity import router as capacity_router
-from apps.gpuaas.app.api.routes.customers import router as customers_router
-from apps.gpuaas.app.api.routes.jobs import router as jobs_router
-from apps.gpuaas.app.api.routes.usage import router as usage_router
+from apps.gpuaas.app.api.routes.allocations import (
+    router as allocations_router,
+)
+from apps.gpuaas.app.api.routes.analytics import (
+    router as analytics_router,
+)
+from apps.gpuaas.app.api.routes.capacity import (
+    router as capacity_router,
+)
+from apps.gpuaas.app.api.routes.customers import (
+    router as customers_router,
+)
+from apps.gpuaas.app.api.routes.jobs import (
+    router as jobs_router,
+)
+from apps.gpuaas.app.api.routes.usage import (
+    router as usage_router,
+)
 
 app = FastAPI(
     title="GPUFlow GPUaaS",
     description="Mock GPU cloud provider API for GPUFlow",
     version="0.1.0",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?$",
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(

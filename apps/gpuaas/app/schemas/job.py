@@ -11,6 +11,21 @@ class JobCreate(BaseModel):
     status: str = Field(default="pending", max_length=50)
 
 
+class JobStart(BaseModel):
+    pass
+
+
+class JobComplete(BaseModel):
+    duration_seconds: int = Field(ge=0)
+
+
+class JobFail(BaseModel):
+    failure_reason: str = Field(
+        min_length=1,
+        max_length=500,
+    )
+
+
 class JobResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

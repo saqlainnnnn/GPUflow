@@ -9,10 +9,16 @@ from apps.gpuaas.app.schemas.customer import (
     CustomerResponse,
     CustomerUpdate,
 )
+from apps.gpuaas.app.schemas.customer_summary import (
+    CustomerSummaryResponse,
+)
 from apps.gpuaas.app.services.customer import (
     CustomerAlreadyExistsError,
     CustomerNotFoundError,
     CustomerService,
+)
+from apps.gpuaas.app.services.customer_summary import (
+    CustomerSummaryService,
 )
 
 router = APIRouter(
@@ -107,6 +113,25 @@ async def list_customers(
     )
 
     return [CustomerResponse.model_validate(customer) for customer in customers]
+
+
+@router.get(
+    "/{customer_id}/summary",
+    response_model=CustomerSummaryResponse,
+)
+async def get_customer_summary(
+    customer_id: UUID,
+    session: AsyncSession = Depends(get_db),
+) -> CustomerSummaryResponse:
+    service = CustomerSummaryService(session)
+
+    try:
+        return await service.get_summary(customer_id)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
 
 
 @router.get(

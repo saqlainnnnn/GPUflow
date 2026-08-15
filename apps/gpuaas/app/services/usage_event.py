@@ -5,10 +5,18 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from apps.gpuaas.app.models.usage_event import GPUUsageEvent
-from apps.gpuaas.app.repositories.allocation import AllocationRepository
-from apps.gpuaas.app.repositories.customer import CustomerRepository
-from apps.gpuaas.app.repositories.usage_event import UsageEventRepository
-from apps.gpuaas.app.schemas.usage_event import UsageEventCreate
+from apps.gpuaas.app.repositories.allocation import (
+    AllocationRepository,
+)
+from apps.gpuaas.app.repositories.customer import (
+    CustomerRepository,
+)
+from apps.gpuaas.app.repositories.usage_event import (
+    UsageEventRepository,
+)
+from apps.gpuaas.app.schemas.usage_event import (
+    UsageEventCreate,
+)
 
 
 class CustomerNotFoundError(Exception):
@@ -79,7 +87,7 @@ class UsageEventService:
         self.session.add(event)
 
         try:
-            await self.session.commit()
+            await self.session.flush()
         except IntegrityError:
             await self.session.rollback()
 
