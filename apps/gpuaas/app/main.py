@@ -25,6 +25,9 @@ from apps.gpuaas.app.api.routes.jobs import (
 from apps.gpuaas.app.api.routes.usage import (
     router as usage_router,
 )
+from apps.gpuaas.app.api.routes.xero import (
+    router as xero_router,
+)
 
 app = FastAPI(
     title="GPUFlow GPUaaS",
@@ -77,6 +80,11 @@ app.include_router(
 
 app.include_router(
     usage_router,
+    prefix="/api/v1",
+)
+
+app.include_router(
+    xero_router,
     prefix="/api/v1",
 )
 

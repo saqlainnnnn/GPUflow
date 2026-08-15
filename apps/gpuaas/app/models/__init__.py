@@ -7,6 +7,7 @@ from apps.gpuaas.app.models.invoice_line_item import InvoiceLineItem
 from apps.gpuaas.app.models.job import GPUJob
 from apps.gpuaas.app.models.outbox_event import OutboxEvent
 from apps.gpuaas.app.models.usage_event import GPUUsageEvent
+from apps.gpuaas.app.models.xero_connection import XeroConnection
 
 __all__ = [
     "Base",
@@ -18,4 +19,5 @@ __all__ = [
     "OutboxEvent",
     "Invoice",
     "InvoiceLineItem",
+    "XeroConnection",
 ]

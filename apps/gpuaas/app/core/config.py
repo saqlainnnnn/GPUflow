@@ -17,10 +17,15 @@ class Settings(BaseSettings):
 
     integration_hub_base_url: str = "http://localhost:8000"
 
+    xero_client_id: str = ""
+    xero_client_secret: str = ""
+    xero_redirect_uri: str = "http://localhost:8001/api/v1/xero/callback"
+    xero_scopes: str = "openid profile email accounting.invoices offline_access"
+
     @property
     def database_url(self) -> str:
         return (
-            f"postgresql+asyncpg://"
+            "postgresql+asyncpg://"
             f"{self.postgres_user}:{self.postgres_password}"
             f"@{self.postgres_host}:{self.postgres_port}"
             f"/{self.postgres_db}"
@@ -29,7 +34,7 @@ class Settings(BaseSettings):
     @property
     def sync_database_url(self) -> str:
         return (
-            f"postgresql+psycopg://"
+            "postgresql+psycopg://"
             f"{self.postgres_user}:{self.postgres_password}"
             f"@{self.postgres_host}:{self.postgres_port}"
             f"/{self.postgres_db}"

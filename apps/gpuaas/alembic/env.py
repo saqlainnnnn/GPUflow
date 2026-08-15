@@ -5,14 +5,20 @@ from sqlalchemy import create_engine, pool
 
 from apps.gpuaas.app.core.config import get_settings
 
-# Register all models with Base.metadata.
+# Import every GPUaaS model so they are registered with Base.metadata.
 from apps.gpuaas.app.models import (  # noqa: F401
     Base,
-    allocation,
-    capacity,
-    customer,
-    job,
-    usage_event,
+    Customer,
+    GPUAllocation,
+    GPUCapacity,
+    GPUJob,
+    GPUUsageEvent,
+    Invoice,
+    InvoiceLineItem,
+    OutboxEvent,
+)
+from apps.gpuaas.app.models.xero_connection import (  # noqa: F401
+    XeroConnection,
 )
 
 config = context.config
@@ -23,6 +29,32 @@ if config.config_file_name is not None:
 target_metadata = Base.metadata
 
 VERSION_TABLE = "alembic_version_gpuaas"
+
+# Tables owned by Integration Hub live in the same PostgreSQL database
+# but must never be managed by GPUaaS Alembic.
+IGNORED_TABLES = {
+    "integration_events",
+    "alembic_version_integration",
+}
+
+
+def include_object(
+    object_,
+    name,
+    type_,
+    reflected,
+    compare_to,
+):
+    if type_ == "table" and name in IGNORED_TABLES:
+        return False
+
+    if type_ == "index":
+        table = getattr(object_, "table", None)
+
+        if table is not None and table.name in IGNORED_TABLES:
+            return False
+
+    return True
 
 
 def run_migrations_offline() -> None:
@@ -35,6 +67,7 @@ def run_migrations_offline() -> None:
         dialect_opts={"paramstyle": "named"},
         compare_type=True,
         version_table=VERSION_TABLE,
+        include_object=include_object,
     )
 
     with context.begin_transaction():
@@ -55,6 +88,7 @@ def run_migrations_online() -> None:
             target_metadata=target_metadata,
             compare_type=True,
             version_table=VERSION_TABLE,
+            include_object=include_object,
         )
 
         with context.begin_transaction():
