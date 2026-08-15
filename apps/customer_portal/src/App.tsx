@@ -75,11 +75,16 @@ type CustomerSummary = {
 function App() {
   const [data, setData] = useState<CustomerSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] =
+    useState<string | null>(null);
+  const [actionError, setActionError] =
+    useState<string | null>(null);
+  const [loadingAction, setLoadingAction] =
+    useState<string | null>(null);
 
   const [gpuType, setGpuType] = useState("A100");
   const [gpuCount, setGpuCount] = useState(1);
-  const [region, setRegion] = useState("us-east");
+  const [region, setRegion] = useState("eu-west");
 
   const [jobExternalId, setJobExternalId] = useState("");
   const [jobAllocationId, setJobAllocationId] = useState("");
@@ -101,6 +106,11 @@ function App() {
     return (await response.json()) as CustomerSummary;
   };
 
+  const refreshDashboard = async () => {
+    const refreshed = await loadDashboard();
+    setData(refreshed);
+  };
+
   useEffect(() => {
     loadDashboard()
       .then(setData)
@@ -114,38 +124,46 @@ function App() {
   ) => {
     event.preventDefault();
     setActionMessage(null);
+    setActionError(null);
 
-    const response = await fetch(
-      `${API_BASE}/api/v1/allocations`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+    try {
+      const response = await fetch(
+        `${API_BASE}/api/v1/allocations`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            customer_id: CUSTOMER_ID,
+            gpu_type: gpuType,
+            gpu_count: gpuCount,
+            region,
+          }),
         },
-        body: JSON.stringify({
-          customer_id: CUSTOMER_ID,
-          gpu_type: gpuType,
-          gpu_count: gpuCount,
-          region,
-        }),
-      },
-    );
-
-    const body = await response.json();
-
-    if (!response.ok) {
-      setActionMessage(
-        body.detail ?? `Allocation failed (${response.status})`,
       );
-      return;
+
+      const body = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          body.detail ??
+            `Allocation failed (${response.status})`,
+        );
+      }
+
+      setActionMessage("GPU allocation created.");
+      setGpuCount(1);
+      setJobAllocationId(body.id);
+
+      await refreshDashboard();
+    } catch (err) {
+      setActionError(
+        err instanceof Error
+          ? err.message
+          : "Allocation failed.",
+      );
     }
-
-    setActionMessage("GPU allocation created.");
-    setGpuCount(1);
-
-    const refreshed = await loadDashboard();
-    setData(refreshed);
-    setJobAllocationId(body.id);
   };
 
   const handleCreateJob = async (
@@ -153,38 +171,138 @@ function App() {
   ) => {
     event.preventDefault();
     setActionMessage(null);
+    setActionError(null);
 
-    const response = await fetch(
-      `${API_BASE}/api/v1/jobs`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+    try {
+      const response = await fetch(
+        `${API_BASE}/api/v1/jobs`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            external_id: jobExternalId,
+            customer_id: CUSTOMER_ID,
+            allocation_id: jobAllocationId,
+            gpu_count: jobGpuCount,
+            status: "pending",
+          }),
         },
-        body: JSON.stringify({
-          external_id: jobExternalId,
-          customer_id: CUSTOMER_ID,
-          allocation_id: jobAllocationId,
-          gpu_count: jobGpuCount,
-          status: "pending",
-        }),
-      },
-    );
-
-    const body = await response.json();
-
-    if (!response.ok) {
-      setActionMessage(
-        body.detail ?? `Job creation failed (${response.status})`,
       );
-      return;
+
+      const body = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          body.detail ??
+            `Job creation failed (${response.status})`,
+        );
+      }
+
+      setActionMessage("GPU job created.");
+      setJobExternalId("");
+      setJobAllocationId(body.allocation_id);
+
+      await refreshDashboard();
+    } catch (err) {
+      setActionError(
+        err instanceof Error
+          ? err.message
+          : "Job creation failed.",
+      );
     }
+  };
 
-    setActionMessage("GPU job created.");
-    setJobExternalId("");
+  const handleJobAction = async (
+    job: Job,
+    action: "start" | "complete" | "fail",
+  ) => {
+    setLoadingAction(`${job.id}:${action}`);
+    setActionMessage(null);
+    setActionError(null);
 
-    const refreshed = await loadDashboard();
-    setData(refreshed);
+    try {
+      let response: Response;
+
+      if (action === "start") {
+        response = await fetch(
+          `${API_BASE}/api/v1/jobs/${job.id}/start`,
+          {
+            method: "POST",
+          },
+        );
+      } else if (action === "complete") {
+        const durationSeconds =
+          job.duration_seconds > 0
+            ? job.duration_seconds
+            : 3600;
+
+        response = await fetch(
+          `${API_BASE}/api/v1/jobs/${job.id}/complete`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              duration_seconds: durationSeconds,
+            }),
+          },
+        );
+      } else {
+        const reason =
+          window.prompt(
+            "Failure reason:",
+            "Customer requested cancellation",
+          ) ?? "";
+
+        if (!reason.trim()) {
+          return;
+        }
+
+        response = await fetch(
+          `${API_BASE}/api/v1/jobs/${job.id}/fail`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              failure_reason: reason.trim(),
+            }),
+          },
+        );
+      }
+
+      const body = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          body.detail ??
+            `Job action failed (${response.status})`,
+        );
+      }
+
+      const message =
+        action === "start"
+          ? "Job started."
+          : action === "complete"
+            ? "Job completed."
+            : "Job marked as failed.";
+
+      setActionMessage(message);
+
+      await refreshDashboard();
+    } catch (err) {
+      setActionError(
+        err instanceof Error
+          ? err.message
+          : "Job action failed.",
+      );
+    } finally {
+      setLoadingAction(null);
+    }
   };
 
   if (error) {
@@ -201,7 +319,9 @@ function App() {
   if (!data) {
     return (
       <main className="page">
-        <div className="loading">Loading dashboard...</div>
+        <div className="loading">
+          Loading dashboard...
+        </div>
       </main>
     );
   }
@@ -225,9 +345,16 @@ function App() {
         </span>
       </header>
 
-      {actionMessage && (
+      {(actionMessage || actionError) && (
         <div className="notice">
-          {actionMessage}
+          {actionMessage && (
+            <span>{actionMessage}</span>
+          )}
+          {actionError && (
+            <span className="error-text">
+              {actionError}
+            </span>
+          )}
         </div>
       )}
 
@@ -263,13 +390,17 @@ function App() {
             </div>
           </div>
 
-          <form className="form" onSubmit={handleCreateAllocation}>
+          <form
+            className="form"
+            onSubmit={handleCreateAllocation}
+          >
             <label>
               GPU type
               <input
                 value={gpuType}
-                onChange={(e) => setGpuType(e.target.value)}
-                placeholder="A100"
+                onChange={(event) =>
+                  setGpuType(event.target.value)
+                }
                 required
               />
             </label>
@@ -280,8 +411,8 @@ function App() {
                 type="number"
                 min={1}
                 value={gpuCount}
-                onChange={(e) =>
-                  setGpuCount(Number(e.target.value))
+                onChange={(event) =>
+                  setGpuCount(Number(event.target.value))
                 }
                 required
               />
@@ -291,8 +422,9 @@ function App() {
               Region
               <input
                 value={region}
-                onChange={(e) => setRegion(e.target.value)}
-                placeholder="us-east"
+                onChange={(event) =>
+                  setRegion(event.target.value)
+                }
                 required
               />
             </label>
@@ -313,15 +445,18 @@ function App() {
             </div>
           </div>
 
-          <form className="form" onSubmit={handleCreateJob}>
+          <form
+            className="form"
+            onSubmit={handleCreateJob}
+          >
             <label>
               Job external ID
               <input
                 value={jobExternalId}
-                onChange={(e) =>
-                  setJobExternalId(e.target.value)
+                onChange={(event) =>
+                  setJobExternalId(event.target.value)
                 }
-                placeholder="training-run-001"
+                placeholder="training-run-004"
                 required
               />
             </label>
@@ -330,8 +465,8 @@ function App() {
               Allocation
               <select
                 value={jobAllocationId}
-                onChange={(e) =>
-                  setJobAllocationId(e.target.value)
+                onChange={(event) =>
+                  setJobAllocationId(event.target.value)
                 }
                 required
               >
@@ -363,8 +498,10 @@ function App() {
                 type="number"
                 min={1}
                 value={jobGpuCount}
-                onChange={(e) =>
-                  setJobGpuCount(Number(e.target.value))
+                onChange={(event) =>
+                  setJobGpuCount(
+                    Number(event.target.value),
+                  )
                 }
                 required
               />
@@ -404,19 +541,25 @@ function App() {
                 );
 
                 return (
-                  <div className="bar-column" key={day.date}>
+                  <div
+                    className="bar-column"
+                    key={day.date}
+                  >
                     <div className="bar-value">
                       {day.gpu_hours.toFixed(1)}
                     </div>
+
                     <div
                       className="bar"
                       style={{
                         height: `${Math.max(
-                          (day.gpu_hours / max) * 180,
+                          (day.gpu_hours / max) *
+                            180,
                           4,
                         )}px`,
                       }}
                     />
+
                     <span>{day.date.slice(5)}</span>
                   </div>
                 );
@@ -440,12 +583,16 @@ function App() {
           ) : (
             <div className="list">
               {usage.by_gpu_type.map((item) => (
-                <div className="list-row" key={item.gpu_type}>
+                <div
+                  className="list-row"
+                  key={item.gpu_type}
+                >
                   <div>
                     <strong>{item.gpu_type}</strong>
                     <span className="muted">
                       {(
-                        item.average_utilization * 100
+                        item.average_utilization *
+                        100
                       ).toFixed(1)}
                       % utilization
                     </span>
@@ -486,7 +633,9 @@ function App() {
                   key={allocation.id}
                 >
                   <div>
-                    <strong>{allocation.gpu_type}</strong>
+                    <strong>
+                      {allocation.gpu_type}
+                    </strong>
                     <span className="muted">
                       {allocation.region}
                     </span>
@@ -527,23 +676,95 @@ function App() {
             <EmptyState text="No jobs yet." />
           ) : (
             <div className="list">
-              {jobs.slice(0, 8).map((job) => (
-                <div className="list-row" key={job.id}>
-                  <div>
-                    <strong>{job.external_id}</strong>
-                    <span className="muted">
-                      {job.gpu_type} · {job.gpu_count} GPU
-                    </span>
-                  </div>
+              {jobs.slice(0, 8).map((job) => {
+                const busy =
+                  loadingAction?.startsWith(
+                    `${job.id}:`,
+                  ) ?? false;
 
-                  <div className="right">
-                    <strong>{job.status}</strong>
-                    <span className="muted">
-                      {job.duration_seconds}s
-                    </span>
+                return (
+                  <div
+                    className="job-row"
+                    key={job.id}
+                  >
+                    <div className="job-info">
+                      <strong>
+                        {job.external_id}
+                      </strong>
+
+                      <span className="muted">
+                        {job.gpu_type} ·{" "}
+                        {job.gpu_count} GPU ·{" "}
+                        {job.duration_seconds}s
+                      </span>
+
+                      {job.failure_reason && (
+                        <span className="error-text">
+                          {job.failure_reason}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="job-actions">
+                      <span
+                        className={`job-status status-${job.status}`}
+                      >
+                        {job.status}
+                      </span>
+
+                      {job.status === "pending" && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleJobAction(
+                              job,
+                              "start",
+                            )
+                          }
+                          disabled={busy}
+                        >
+                          {busy
+                            ? "Starting..."
+                            : "Start"}
+                        </button>
+                      )}
+
+                      {job.status === "running" && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleJobAction(
+                                job,
+                                "complete",
+                              )
+                            }
+                            disabled={busy}
+                          >
+                            {busy
+                              ? "Completing..."
+                              : "Complete"}
+                          </button>
+
+                          <button
+                            type="button"
+                            className="danger-button"
+                            onClick={() =>
+                              handleJobAction(
+                                job,
+                                "fail",
+                              )
+                            }
+                            disabled={busy}
+                          >
+                            Fail
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -564,12 +785,16 @@ function App() {
             label="7 day"
             value={summary.growth_7d_percent}
           />
+
           <Growth
             label="30 day"
             value={summary.growth_30d_percent}
           />
+
           <div className="growth-item">
-            <span className="muted">Usage events</span>
+            <span className="muted">
+              Usage events
+            </span>
             <strong>{summary.event_count}</strong>
           </div>
         </div>
@@ -602,7 +827,10 @@ function Growth({
 }) {
   return (
     <div className="growth-item">
-      <span className="muted">{label} growth</span>
+      <span className="muted">
+        {label} growth
+      </span>
+
       <strong>
         {value === null
           ? "—"
@@ -612,7 +840,11 @@ function Growth({
   );
 }
 
-function EmptyState({ text }: { text: string }) {
+function EmptyState({
+  text,
+}: {
+  text: string;
+}) {
   return <div className="empty">{text}</div>;
 }
 

@@ -319,3 +319,89 @@ h2 {
     grid-template-columns: 1fr;
   }
 }
+
+.job-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px 0;
+  border-top: 1px solid #202735;
+}
+
+.job-info {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.job-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.job-actions button {
+  padding: 8px 11px;
+  border: 1px solid #2b3445;
+  border-radius: 9px;
+  cursor: pointer;
+  color: #e9edf5;
+  background: #161d29;
+}
+
+.job-actions button:hover {
+  background: #202938;
+}
+
+.job-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.danger-button {
+  border-color: #5a3030 !important;
+}
+
+.job-status {
+  padding: 6px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  text-transform: capitalize;
+}
+
+.status-pending {
+  color: #d9dee7;
+  background: #202735;
+}
+
+.status-running {
+  color: #fff0c7;
+  background: #3b321d;
+}
+
+.status-completed {
+  color: #d8ffe7;
+  background: #193022;
+}
+
+.status-failed {
+  color: #ffd8d8;
+  background: #3a2020;
+}
+
+.error-text {
+  color: #ff9b9b;
+}
+
+@media (max-width: 700px) {
+  .job-row {
+    flex-direction: column;
+  }
+
+  .job-actions {
+    justify-content: flex-start;
+  }
+}
