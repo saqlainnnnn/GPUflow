@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     xero_client_secret: str = ""
     xero_redirect_uri: str = "http://localhost:8001/api/v1/xero/callback"
     xero_scopes: str = "openid profile email accounting.invoices offline_access"
+    xero_sales_account_code: str = "400"
 
     @property
     def database_url(self) -> str:

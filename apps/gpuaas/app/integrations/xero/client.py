@@ -5,6 +5,18 @@ import httpx
 XERO_API_BASE = "https://api.xero.com/api.xro/2.0"
 
 
+class XeroAPIError(RuntimeError):
+    def __init__(
+        self,
+        status_code: int,
+        response_body: str,
+    ) -> None:
+        self.status_code = status_code
+        self.response_body = response_body
+
+        super().__init__(f"Xero API error {status_code}: {response_body}")
+
+
 class XeroClient:
     def __init__(
         self,
@@ -16,7 +28,7 @@ class XeroClient:
 
     def _headers(self) -> dict[str, str]:
         return {
-            "Authorization": (f"Bearer {self.access_token}"),
+            "Authorization": f"Bearer {self.access_token}",
             "xero-tenant-id": self.tenant_id,
             "Accept": "application/json",
             "Content-Type": "application/json",
@@ -44,7 +56,11 @@ class XeroClient:
                 },
             )
 
-        response.raise_for_status()
+        if not response.is_success:
+            raise XeroAPIError(
+                response.status_code,
+                response.text,
+            )
 
         return response.json()
 
@@ -61,7 +77,11 @@ class XeroClient:
                 },
             )
 
-        response.raise_for_status()
+        if not response.is_success:
+            raise XeroAPIError(
+                response.status_code,
+                response.text,
+            )
 
         contacts = response.json().get(
             "Contacts",
@@ -86,7 +106,11 @@ class XeroClient:
                 },
             )
 
-        response.raise_for_status()
+        if not response.is_success:
+            raise XeroAPIError(
+                response.status_code,
+                response.text,
+            )
 
         contacts = response.json().get(
             "Contacts",
@@ -97,6 +121,36 @@ class XeroClient:
             return None
 
         return contacts[0]
+
+    async def get_organisation(self) -> dict[str, Any]:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            response = await client.get(
+                f"{XERO_API_BASE}/Organisation",
+                headers=self._headers(),
+            )
+
+        if not response.is_success:
+            raise XeroAPIError(
+                response.status_code,
+                response.text,
+            )
+
+        return response.json()
+
+    async def get_currencies(self) -> dict[str, Any]:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            response = await client.get(
+                f"{XERO_API_BASE}/Currencies",
+                headers=self._headers(),
+            )
+
+        if not response.is_success:
+            raise XeroAPIError(
+                response.status_code,
+                response.text,
+            )
+
+        return response.json()
 
     async def create_invoice(
         self,
@@ -111,7 +165,11 @@ class XeroClient:
                 },
             )
 
-        response.raise_for_status()
+        if not response.is_success:
+            raise XeroAPIError(
+                response.status_code,
+                response.text,
+            )
 
         return response.json()
 
@@ -125,6 +183,10 @@ class XeroClient:
                 headers=self._headers(),
             )
 
-        response.raise_for_status()
+        if not response.is_success:
+            raise XeroAPIError(
+                response.status_code,
+                response.text,
+            )
 
         return response.json()
