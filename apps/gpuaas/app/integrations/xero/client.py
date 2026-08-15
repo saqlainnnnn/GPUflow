@@ -14,7 +14,9 @@ class XeroAPIError(RuntimeError):
         self.status_code = status_code
         self.response_body = response_body
 
-        super().__init__(f"Xero API error {status_code}: {response_body}")
+        super().__init__(
+            f"Xero API error {status_code}: {response_body}"
+        )
 
 
 class XeroClient:
@@ -122,7 +124,9 @@ class XeroClient:
 
         return contacts[0]
 
-    async def get_organisation(self) -> dict[str, Any]:
+    async def get_organisation(
+        self,
+    ) -> dict[str, Any]:
         async with httpx.AsyncClient(timeout=15.0) as client:
             response = await client.get(
                 f"{XERO_API_BASE}/Organisation",
@@ -137,7 +141,9 @@ class XeroClient:
 
         return response.json()
 
-    async def get_currencies(self) -> dict[str, Any]:
+    async def get_currencies(
+        self,
+    ) -> dict[str, Any]:
         async with httpx.AsyncClient(timeout=15.0) as client:
             response = await client.get(
                 f"{XERO_API_BASE}/Currencies",
@@ -172,6 +178,35 @@ class XeroClient:
             )
 
         return response.json()
+
+    async def find_invoice_by_number(
+        self,
+        invoice_number: str,
+    ) -> dict[str, Any] | None:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            response = await client.get(
+                f"{XERO_API_BASE}/Invoices",
+                headers=self._headers(),
+                params={
+                    "where": f'InvoiceNumber=="{invoice_number}"',
+                },
+            )
+
+        if not response.is_success:
+            raise XeroAPIError(
+                response.status_code,
+                response.text,
+            )
+
+        invoices = response.json().get(
+            "Invoices",
+            [],
+        )
+
+        if not invoices:
+            return None
+
+        return invoices[0]
 
     async def get_invoice(
         self,

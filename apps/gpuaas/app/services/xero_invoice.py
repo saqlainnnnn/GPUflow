@@ -26,19 +26,50 @@ class XeroInvoiceService:
         self.customers = CustomerRepository(session)
         self.contacts = XeroContactService(session)
 
+    @staticmethod
+    def _extract_invoice_id(
+        response: dict[str, Any],
+    ) -> str:
+        invoices = response.get(
+            "Invoices",
+            [],
+        )
+
+        if not invoices:
+            raise RuntimeError(
+                "Xero invoice response contained no invoices"
+            )
+
+        invoice_id = invoices[0].get("InvoiceID")
+
+        if not invoice_id:
+            raise RuntimeError(
+                "Xero invoice response missing InvoiceID"
+            )
+
+        return str(invoice_id)
+
     async def create_xero_invoice(
         self,
         invoice_id: UUID,
     ) -> dict[str, Any]:
-        invoice = await self.invoices.get_by_id(invoice_id)
+        invoice = await self.invoices.get_by_id_for_update(
+            invoice_id,
+        )
 
         if invoice is None:
-            raise ValueError(f"Invoice '{invoice_id}' not found")
+            raise ValueError(
+                f"Invoice '{invoice_id}' not found"
+            )
 
-        customer = await self.customers.get_by_id(invoice.customer_id)
+        customer = await self.customers.get_by_id(
+            invoice.customer_id,
+        )
 
         if customer is None:
-            raise ValueError(f"Customer '{invoice.customer_id}' not found")
+            raise ValueError(
+                f"Customer '{invoice.customer_id}' not found"
+            )
 
         connection = await get_valid_connection(
             self.session,
@@ -50,6 +81,13 @@ class XeroInvoiceService:
             tenant_id=connection.tenant_id,
         )
 
+        # Fast path:
+        # GPUFlow already knows which Xero invoice represents this invoice.
+        if invoice.xero_invoice_id:
+            return await client.get_invoice(
+                invoice.xero_invoice_id,
+            )
+
         organisation_response = await client.get_organisation()
 
         organisations = organisation_response.get(
@@ -58,12 +96,18 @@ class XeroInvoiceService:
         )
 
         if not organisations:
-            raise RuntimeError("Xero organisation response contained no organisation")
+            raise RuntimeError(
+                "Xero organisation response contained no organisation"
+            )
 
-        xero_currency = organisations[0].get("BaseCurrency")
+        xero_currency = organisations[0].get(
+            "BaseCurrency",
+        )
 
         if not xero_currency:
-            raise RuntimeError("Xero organisation response missing BaseCurrency")
+            raise RuntimeError(
+                "Xero organisation response missing BaseCurrency"
+            )
 
         if invoice.currency != xero_currency:
             raise XeroInvoiceCurrencyError(
@@ -72,7 +116,36 @@ class XeroInvoiceService:
                 f"'{xero_currency}'"
             )
 
-        contact_id = await self.contacts.get_or_create_contact(invoice.customer_id)
+        # Recovery path:
+        # Xero may already contain the invoice if the previous request
+        # succeeded at Xero but failed before GPUFlow persisted the ID.
+        existing_xero_invoice = await client.find_invoice_by_number(
+            invoice.invoice_number,
+        )
+
+        if existing_xero_invoice is not None:
+            existing_invoice_id = existing_xero_invoice.get(
+                "InvoiceID",
+            )
+
+            if not existing_invoice_id:
+                raise RuntimeError(
+                    "Existing Xero invoice response missing InvoiceID"
+                )
+
+            invoice.xero_invoice_id = str(
+                existing_invoice_id,
+            )
+
+            await self.session.flush()
+
+            return {
+                "Invoices": [existing_xero_invoice],
+            }
+
+        contact_id = await self.contacts.get_or_create_contact(
+            invoice.customer_id,
+        )
 
         line_items: list[dict[str, Any]] = []
 
@@ -81,7 +154,9 @@ class XeroInvoiceService:
                 {
                     "Description": item.description,
                     "Quantity": float(item.gpu_hours),
-                    "UnitAmount": float(item.rate_per_gpu_hour),
+                    "UnitAmount": float(
+                        item.rate_per_gpu_hour,
+                    ),
                     "AccountCode": "400",
                 }
             )
@@ -94,11 +169,25 @@ class XeroInvoiceService:
             "Date": invoice.period_end.isoformat(),
             "DueDate": invoice.period_end.isoformat(),
             "InvoiceNumber": invoice.invoice_number,
-            "Reference": (f"GPUFlow invoice {invoice.invoice_number}"),
+            "Reference": (
+                f"GPUFlow invoice {invoice.invoice_number}"
+            ),
             "CurrencyCode": xero_currency,
             "LineAmountTypes": "Exclusive",
             "LineItems": line_items,
             "Status": "DRAFT",
         }
 
-        return await client.create_invoice(payload)
+        response = await client.create_invoice(
+            payload,
+        )
+
+        created_invoice_id = self._extract_invoice_id(
+            response,
+        )
+
+        invoice.xero_invoice_id = created_invoice_id
+
+        await self.session.flush()
+
+        return response

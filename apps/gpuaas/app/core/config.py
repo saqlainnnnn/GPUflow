@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     xero_scopes: str = "openid profile email accounting.invoices offline_access"
     xero_sales_account_code: str = "400"
 
+    groq_api_key: str = ""
+    groq_model: str = "llama-3.3-70b-versatile"
+
     @property
     def database_url(self) -> str:
         return (

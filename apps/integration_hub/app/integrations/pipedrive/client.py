@@ -29,7 +29,9 @@ class PipedriveClient:
         body = response.json()
 
         if not body.get("success"):
-            raise RuntimeError(f"Pipedrive API returned unsuccessful response: {body}")
+            raise RuntimeError(
+                f"Pipedrive API returned unsuccessful response: {body}"
+            )
 
         return body["data"]
 
@@ -49,7 +51,9 @@ class PipedriveClient:
             payload["address"] = address
 
         if not payload:
-            raise ValueError("At least one organization field must be provided")
+            raise ValueError(
+                "At least one organization field must be provided"
+            )
 
         async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.patch(
@@ -63,7 +67,9 @@ class PipedriveClient:
         body = response.json()
 
         if not body.get("success"):
-            raise RuntimeError(f"Pipedrive API returned unsuccessful response: {body}")
+            raise RuntimeError(
+                f"Pipedrive API returned unsuccessful response: {body}"
+            )
 
         return body["data"]
 
@@ -82,7 +88,9 @@ class PipedriveClient:
         body = response.json()
 
         if not body.get("success"):
-            raise RuntimeError(f"Pipedrive API returned unsuccessful response: {body}")
+            raise RuntimeError(
+                f"Pipedrive API returned unsuccessful response: {body}"
+            )
 
         return body["data"]
 
@@ -101,19 +109,60 @@ class PipedriveClient:
         body = response.json()
 
         if not body.get("success"):
-            raise RuntimeError(f"Pipedrive API returned unsuccessful response: {body}")
+            raise RuntimeError(
+                f"Pipedrive API returned unsuccessful response: {body}"
+            )
 
         return body["data"]
+
+    async def get_activities(
+        self,
+        *,
+        deal_id: int,
+    ) -> list[dict[str, Any]]:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(
+                f"{self.base_url}/activities",
+                params={
+                    "api_token": self.api_token,
+                    "deal_id": deal_id,
+                },
+            )
+
+        response.raise_for_status()
+
+        body = response.json()
+
+        if not body.get("success"):
+            raise RuntimeError(
+                f"Pipedrive API returned unsuccessful response: {body}"
+            )
+
+        data = body.get("data", [])
+
+        if data is None:
+            return []
+
+        if not isinstance(data, list):
+            raise RuntimeError(
+                "Pipedrive activities response contained invalid data"
+            )
+
+        return data
 
 
 def get_pipedrive_client() -> PipedriveClient:
     settings = get_settings()
 
     if not settings.pipedrive_api_token:
-        raise RuntimeError("PIPEDRIVE_API_TOKEN is not configured")
+        raise RuntimeError(
+            "PIPEDRIVE_API_TOKEN is not configured"
+        )
 
     if not settings.pipedrive_company_domain:
-        raise RuntimeError("PIPEDRIVE_COMPANY_DOMAIN is not configured")
+        raise RuntimeError(
+            "PIPEDRIVE_COMPANY_DOMAIN is not configured"
+        )
 
     return PipedriveClient(
         company_domain=settings.pipedrive_company_domain,

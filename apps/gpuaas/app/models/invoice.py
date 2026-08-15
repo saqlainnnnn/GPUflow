@@ -48,6 +48,13 @@ class Invoice(
         index=True,
     )
 
+    xero_invoice_id: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+        unique=True,
+        index=True,
+    )
+
     period_start: Mapped[date] = mapped_column(
         Date,
         nullable=False,
