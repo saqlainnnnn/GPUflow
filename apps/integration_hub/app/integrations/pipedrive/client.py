@@ -33,6 +33,40 @@ class PipedriveClient:
 
         return body["data"]
 
+    async def update_organization(
+        self,
+        organization_id: int,
+        *,
+        name: str | None = None,
+        address: str | None = None,
+    ) -> dict[str, Any]:
+        payload: dict[str, Any] = {}
+
+        if name is not None:
+            payload["name"] = name
+
+        if address is not None:
+            payload["address"] = address
+
+        if not payload:
+            raise ValueError("At least one organization field must be provided")
+
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.patch(
+                f"{self.base_url}/organizations/{organization_id}",
+                params={"api_token": self.api_token},
+                json=payload,
+            )
+
+        response.raise_for_status()
+
+        body = response.json()
+
+        if not body.get("success"):
+            raise RuntimeError(f"Pipedrive API returned unsuccessful response: {body}")
+
+        return body["data"]
+
     async def get_person(
         self,
         person_id: int,

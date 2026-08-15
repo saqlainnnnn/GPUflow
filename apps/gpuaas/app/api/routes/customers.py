@@ -7,6 +7,7 @@ from apps.gpuaas.app.api.dependencies import get_db
 from apps.gpuaas.app.schemas.customer import (
     CustomerCreate,
     CustomerResponse,
+    CustomerUpdate,
 )
 from apps.gpuaas.app.services.customer import (
     CustomerAlreadyExistsError,
@@ -60,6 +61,31 @@ async def upsert_customer(
     service = CustomerService(session)
 
     customer, _ = await service.upsert_customer(data)
+
+    return CustomerResponse.model_validate(customer)
+
+
+@router.patch(
+    "/{customer_id}",
+    response_model=CustomerResponse,
+)
+async def update_customer(
+    customer_id: UUID,
+    data: CustomerUpdate,
+    session: AsyncSession = Depends(get_db),
+) -> CustomerResponse:
+    service = CustomerService(session)
+
+    try:
+        customer = await service.update_customer(
+            customer_id,
+            data,
+        )
+    except CustomerNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
 
     return CustomerResponse.model_validate(customer)
 

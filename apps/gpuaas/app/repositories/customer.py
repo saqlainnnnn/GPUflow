@@ -10,13 +10,19 @@ class CustomerRepository:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
-    async def create(self, customer: Customer) -> Customer:
+    async def create(
+        self,
+        customer: Customer,
+    ) -> Customer:
         self.session.add(customer)
         await self.session.flush()
         await self.session.refresh(customer)
         return customer
 
-    async def get_by_id(self, customer_id: UUID) -> Customer | None:
+    async def get_by_id(
+        self,
+        customer_id: UUID,
+    ) -> Customer | None:
         result = await self.session.execute(select(Customer).where(Customer.id == customer_id))
         return result.scalar_one_or_none()
 
@@ -56,4 +62,5 @@ class CustomerRepository:
         result = await self.session.execute(
             select(Customer).order_by(Customer.created_at.desc()).offset(offset).limit(limit)
         )
+
         return list(result.scalars().all())

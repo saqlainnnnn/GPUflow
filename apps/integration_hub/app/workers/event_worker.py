@@ -7,6 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from apps.integration_hub.app.core.redis import get_redis
 from apps.integration_hub.app.db.session import AsyncSessionLocal
+from apps.integration_hub.app.integrations.pipedrive.client import (
+    get_pipedrive_client,
+)
 from apps.integration_hub.app.integrations.pipedrive.handlers.organization import (
     build_pipedrive_organization_handler,
 )
@@ -17,6 +20,50 @@ logger = logging.getLogger(__name__)
 
 MAX_RETRIES = 3
 BASE_BACKOFF_SECONDS = 2
+
+
+async def handle_customer_updated(
+    payload: dict,
+) -> None:
+    sync_origin = payload.get("sync_origin")
+
+    # Prevent a Pipedrive-originated change from being echoed
+    # back into Pipedrive indefinitely.
+    if sync_origin == "pipedrive":
+        logger.info("Skipping customer.updated event originating from Pipedrive")
+        return
+
+    external_id = payload.get("external_id")
+
+    if not external_id:
+        raise ValueError("customer.updated missing external_id")
+
+    prefix = "pipedrive:organization:"
+
+    if not external_id.startswith(prefix):
+        logger.warning(
+            "Customer %s has no Pipedrive organization mapping; skipping",
+            external_id,
+        )
+        return
+
+    organization_id = external_id.removeprefix(prefix)
+
+    if not organization_id.isdigit():
+        raise ValueError(f"Invalid Pipedrive organization ID: {organization_id}")
+
+    client = get_pipedrive_client()
+
+    result = await client.update_organization(
+        int(organization_id),
+        name=payload.get("company_name"),
+    )
+
+    logger.info(
+        "Updated Pipedrive organization %s from GPUFlow: %s",
+        organization_id,
+        result.get("id"),
+    )
 
 
 async def handle_event(
@@ -33,7 +80,10 @@ async def handle_event(
         return
 
     if event.status == "processed":
-        logger.info("Event %s already processed", event_id)
+        logger.info(
+            "Event %s already processed",
+            event_id,
+        )
         return
 
     await repository.update_status(
@@ -48,6 +98,9 @@ async def handle_event(
                 "Processing customer.created: %s",
                 event.source_event_id,
             )
+
+        elif event.event_type == "customer.updated":
+            await handle_customer_updated(event.payload)
 
         elif event.event_type == "test.failure":
             raise RuntimeError("Simulated integration failure")
@@ -180,5 +233,7 @@ async def worker_loop() -> None:
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(
+        level=logging.INFO,
+    )
     asyncio.run(worker_loop())

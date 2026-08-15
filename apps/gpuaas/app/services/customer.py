@@ -3,9 +3,16 @@ from uuid import UUID
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from apps.gpuaas.app.integrations.events import (
+    build_customer_updated_event,
+)
 from apps.gpuaas.app.models.customer import Customer
 from apps.gpuaas.app.repositories.customer import CustomerRepository
-from apps.gpuaas.app.schemas.customer import CustomerCreate
+from apps.gpuaas.app.repositories.outbox import OutboxRepository
+from apps.gpuaas.app.schemas.customer import (
+    CustomerCreate,
+    CustomerUpdate,
+)
 
 
 class CustomerAlreadyExistsError(Exception):
@@ -17,8 +24,12 @@ class CustomerNotFoundError(Exception):
 
 
 class CustomerService:
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(
+        self,
+        session: AsyncSession,
+    ) -> None:
         self.repository = CustomerRepository(session)
+        self.outbox = OutboxRepository(session)
         self.session = session
 
     async def create_customer(
@@ -100,6 +111,45 @@ class CustomerService:
         await self.session.commit()
 
         return customer, False
+
+    async def update_customer(
+        self,
+        customer_id: UUID,
+        data: CustomerUpdate,
+    ) -> Customer:
+        customer = await self.repository.get_by_id(customer_id)
+
+        if customer is None:
+            raise CustomerNotFoundError(f"Customer '{customer_id}' not found")
+
+        customer = await self.repository.update(
+            customer,
+            company_name=data.company_name,
+            email=str(data.email),
+            country=data.country,
+            status=data.status,
+        )
+
+        if data.sync_origin == "gpuaas":
+            event = build_customer_updated_event(
+                customer.id,
+                external_id=customer.external_id,
+                company_name=customer.company_name,
+                email=customer.email,
+                country=customer.country,
+                sync_origin=data.sync_origin,
+            )
+
+            await self.outbox.create(
+                aggregate_type="customer",
+                aggregate_id=customer.id,
+                event_type="customer.updated",
+                payload=event,
+            )
+
+        await self.session.commit()
+
+        return customer
 
     async def get_customer(
         self,

@@ -15,8 +15,7 @@ class Settings(BaseSettings):
     redis_host: str = "localhost"
     redis_port: int = 6379
 
-    pipedrive_api_token: str = ""
-    pipedrive_company_domain: str = ""
+    integration_hub_base_url: str = "http://localhost:8000"
 
     @property
     def database_url(self) -> str:
