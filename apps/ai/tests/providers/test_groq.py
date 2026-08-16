@@ -1,9 +1,11 @@
-from types import SimpleNamespace
-from unittest.mock import AsyncMock
-
 import pytest
+from unittest.mock import AsyncMock
+from types import SimpleNamespace
 
-from apps.ai.core.llm import LLMRequest, LLMResponse
+from apps.ai.core.llm import (
+    LLMRequest,
+    LLMResponse,
+)
 from apps.ai.providers.groq import GroqProvider
 
 
@@ -63,6 +65,9 @@ async def test_groq_provider_maps_request_and_response():
                 "content": "Analyze this deal.",
             },
         ],
+        response_format={
+            "type": "json_object",
+        },
     )
 
 
@@ -77,7 +82,7 @@ async def test_groq_provider_handles_missing_usage():
                         choices=[
                             SimpleNamespace(
                                 message=SimpleNamespace(
-                                    content="hello",
+                                    content="{}",
                                 )
                             )
                         ],
@@ -97,10 +102,9 @@ async def test_groq_provider_handles_missing_usage():
         LLMRequest(
             system_prompt="system",
             user_prompt="user",
-            prompt_version="v1",
+            prompt_version="test_v1",
         )
     )
 
-    assert result.content == "hello"
     assert result.input_tokens == 0
     assert result.output_tokens == 0

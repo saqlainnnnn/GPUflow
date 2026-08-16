@@ -1,0 +1,676 @@
+{
+  "runner_config": {
+    "deal_id": 456,
+    "organization_id": 123,
+    "customer_id": "00000000-0000-0000-0000-000000000001",
+    "today": "2026-08-16"
+  },
+  "cases": [
+    {
+      "case_id": "DR-001",
+      "description": "Healthy GPU provider expansion with strong technical and economic engagement.",
+      "category": "healthy",
+      "evidence": {
+        "deal": {
+          "age_days": 24,
+          "stage_age_days": 8,
+          "value": 180000
+        },
+        "crm": {
+          "days_since_last_activity": 3,
+          "economic_buyer_engaged": true,
+          "technical_champion_engaged": true
+        },
+        "usage": {
+          "growth_7d_percent": 18.0,
+          "growth_30d_percent": 38.0
+        },
+        "jobs": {
+          "failed_jobs_30d": 1,
+          "total_jobs_30d": 42
+        },
+        "billing": {
+          "spend_growth_30d_percent": 42.0
+        }
+      },
+      "expected": {
+        "risk_level": "low",
+        "score_min": 0,
+        "score_max": 25,
+        "recommended_action": "progress"
+      },
+      "required_signals": [
+        "usage_growth",
+        "economic_buyer_engaged"
+      ],
+      "forbidden_conclusions": [
+        "deal is likely lost"
+      ]
+    },
+    {
+      "case_id": "DR-002",
+      "description": "Stable buyer progressing through normal procurement.",
+      "category": "healthy",
+      "evidence": {
+        "deal": {
+          "age_days": 35,
+          "stage_age_days": 12,
+          "value": 250000
+        },
+        "crm": {
+          "days_since_last_activity": 5,
+          "economic_buyer_engaged": true,
+          "procurement_started": true
+        },
+        "usage": {
+          "growth_30d_percent": 8.0
+        },
+        "jobs": {
+          "failed_jobs_30d": 2,
+          "total_jobs_30d": 50
+        },
+        "billing": {
+          "spend_growth_30d_percent": 7.0
+        }
+      },
+      "expected": {
+        "risk_level": "low",
+        "score_min": 0,
+        "score_max": 30,
+        "recommended_action": "progress"
+      },
+      "required_signals": [
+        "procurement_progress"
+      ],
+      "forbidden_conclusions": []
+    },
+    {
+      "case_id": "DR-003",
+      "description": "Strong usage growth and active economic buyer engagement.",
+      "category": "healthy",
+      "evidence": {
+        "deal": {
+          "age_days": 41,
+          "stage_age_days": 15,
+          "value": 320000
+        },
+        "crm": {
+          "days_since_last_activity": 2,
+          "economic_buyer_engaged": true
+        },
+        "usage": {
+          "growth_7d_percent": 22.0,
+          "growth_30d_percent": 51.0
+        },
+        "jobs": {
+          "failed_jobs_30d": 1,
+          "total_jobs_30d": 64
+        },
+        "billing": {
+          "spend_growth_30d_percent": 47.0
+        }
+      },
+      "expected": {
+        "risk_level": "low",
+        "score_min": 0,
+        "score_max": 25,
+        "recommended_action": "progress"
+      },
+      "required_signals": [
+        "usage_growth",
+        "spend_growth"
+      ],
+      "forbidden_conclusions": []
+    },
+    {
+      "case_id": "DR-004",
+      "description": "Opportunity is stale but no strong operational deterioration is visible.",
+      "category": "stale",
+      "evidence": {
+        "deal": {
+          "age_days": 82,
+          "stage_age_days": 41,
+          "value": 300000
+        },
+        "crm": {
+          "days_since_last_activity": 18,
+          "economic_buyer_engaged": true
+        },
+        "usage": {
+          "growth_30d_percent": 2.0
+        },
+        "jobs": {
+          "failed_jobs_30d": 3,
+          "total_jobs_30d": 55
+        },
+        "billing": {
+          "spend_growth_30d_percent": 1.0
+        }
+      },
+      "expected": {
+        "risk_level": "medium",
+        "score_min": 35,
+        "score_max": 65,
+        "recommended_action": "monitor"
+      },
+      "required_signals": [
+        "deal_stale",
+        "no_recent_activity"
+      ],
+      "forbidden_conclusions": [
+        "customer has decided to cancel"
+      ]
+    },
+    {
+      "case_id": "DR-005",
+      "description": "Moderate GPU usage decline despite otherwise normal deal engagement.",
+      "category": "usage_decline",
+      "evidence": {
+        "deal": {
+          "age_days": 52,
+          "stage_age_days": 18,
+          "value": 220000
+        },
+        "crm": {
+          "days_since_last_activity": 6,
+          "economic_buyer_engaged": true
+        },
+        "usage": {
+          "growth_7d_percent": -12.0,
+          "growth_30d_percent": -18.0
+        },
+        "jobs": {
+          "failed_jobs_30d": 2,
+          "total_jobs_30d": 42
+        },
+        "billing": {
+          "spend_growth_30d_percent": -10.0
+        }
+      },
+      "expected": {
+        "risk_level": "medium",
+        "score_min": 35,
+        "score_max": 65,
+        "recommended_action": "investigate"
+      },
+      "required_signals": [
+        "usage_declining"
+      ],
+      "forbidden_conclusions": []
+    },
+    {
+      "case_id": "DR-006",
+      "description": "Elevated job failures create operational risk for the expansion.",
+      "category": "job_failures",
+      "evidence": {
+        "deal": {
+          "age_days": 47,
+          "stage_age_days": 20,
+          "value": 280000
+        },
+        "crm": {
+          "days_since_last_activity": 7,
+          "economic_buyer_engaged": true
+        },
+        "usage": {
+          "growth_30d_percent": 5.0
+        },
+        "jobs": {
+          "failed_jobs_30d": 14,
+          "total_jobs_30d": 40
+        },
+        "billing": {
+          "spend_growth_30d_percent": 3.0
+        }
+      },
+      "expected": {
+        "risk_level": "medium",
+        "score_min": 45,
+        "score_max": 70,
+        "recommended_action": "investigate"
+      },
+      "required_signals": [
+        "job_failures"
+      ],
+      "forbidden_conclusions": [
+        "deal is definitely lost"
+      ]
+    },
+    {
+      "case_id": "DR-007",
+      "description": "Severe usage and spend decline on a large expansion opportunity.",
+      "category": "severe_decline",
+      "evidence": {
+        "deal": {
+          "age_days": 76,
+          "stage_age_days": 46,
+          "value": 500000
+        },
+        "crm": {
+          "days_since_last_activity": 15,
+          "economic_buyer_engaged": false
+        },
+        "usage": {
+          "growth_7d_percent": -35.0,
+          "growth_30d_percent": -42.0
+        },
+        "jobs": {
+          "failed_jobs_30d": 8,
+          "total_jobs_30d": 20
+        },
+        "billing": {
+          "spend_growth_30d_percent": -30.0
+        }
+      },
+      "expected": {
+        "risk_level": "high",
+        "score_min": 75,
+        "score_max": 100,
+        "recommended_action": "requalify"
+      },
+      "required_signals": [
+        "deal_stale",
+        "usage_declining",
+        "job_failures",
+        "spend_declining"
+      ],
+      "forbidden_conclusions": []
+    },
+    {
+      "case_id": "DR-008",
+      "description": "Stale opportunity with simultaneous operational deterioration.",
+      "category": "stale_operational",
+      "evidence": {
+        "deal": {
+          "age_days": 93,
+          "stage_age_days": 55,
+          "value": 420000
+        },
+        "crm": {
+          "days_since_last_activity": 27,
+          "economic_buyer_engaged": false
+        },
+        "usage": {
+          "growth_30d_percent": -28.0
+        },
+        "jobs": {
+          "failed_jobs_30d": 11,
+          "total_jobs_30d": 31
+        },
+        "billing": {
+          "spend_growth_30d_percent": -24.0
+        }
+      },
+      "expected": {
+        "risk_level": "high",
+        "score_min": 80,
+        "score_max": 100,
+        "recommended_action": "escalate"
+      },
+      "required_signals": [
+        "deal_stale",
+        "no_recent_activity",
+        "usage_declining",
+        "job_failures"
+      ],
+      "forbidden_conclusions": []
+    },
+    {
+      "case_id": "DR-009",
+      "description": "Core deal metrics are healthy but CRM activity has gone quiet.",
+      "category": "missing_activity",
+      "evidence": {
+        "deal": {
+          "age_days": 30,
+          "stage_age_days": 10,
+          "value": 190000
+        },
+        "crm": {
+          "days_since_last_activity": null,
+          "economic_buyer_engaged": null
+        },
+        "usage": {
+          "growth_30d_percent": 17.0
+        },
+        "jobs": {
+          "failed_jobs_30d": 1,
+          "total_jobs_30d": 35
+        },
+        "billing": {
+          "spend_growth_30d_percent": 15.0
+        }
+      },
+      "expected": {
+        "risk_level": "medium",
+        "score_min": 30,
+        "score_max": 60,
+        "recommended_action": "investigate"
+      },
+      "required_signals": [
+        "missing_activity_data"
+      ],
+      "forbidden_conclusions": [
+        "no activity means the deal is lost"
+      ]
+    },
+    {
+      "case_id": "DR-010",
+      "description": "Strong usage growth conflicts with stale CRM activity.",
+      "category": "contradictory_signals",
+      "evidence": {
+        "deal": {
+          "age_days": 68,
+          "stage_age_days": 29,
+          "value": 350000
+        },
+        "crm": {
+          "days_since_last_activity": 25,
+          "economic_buyer_engaged": true
+        },
+        "usage": {
+          "growth_30d_percent": 44.0
+        },
+        "jobs": {
+          "failed_jobs_30d": 2,
+          "total_jobs_30d": 60
+        },
+        "billing": {
+          "spend_growth_30d_percent": 39.0
+        }
+      },
+      "expected": {
+        "risk_level": "medium",
+        "score_min": 30,
+        "score_max": 65,
+        "recommended_action": "investigate"
+      },
+      "required_signals": [
+        "contradictory_signals"
+      ],
+      "forbidden_conclusions": []
+    },
+    {
+      "case_id": "DR-011",
+      "description": "Billing is missing while operational indicators have deteriorated sharply.",
+      "category": "missing_data",
+      "evidence": {
+        "deal": {
+          "age_days": 71,
+          "stage_age_days": 38,
+          "value": 390000
+        },
+        "crm": {
+          "days_since_last_activity": 17,
+          "economic_buyer_engaged": false
+        },
+        "usage": {
+          "growth_30d_percent": -31.0
+        },
+        "jobs": {
+          "failed_jobs_30d": 10,
+          "total_jobs_30d": 24
+        },
+        "billing": null
+      },
+      "expected": {
+        "risk_level": "high",
+        "score_min": 70,
+        "score_max": 100,
+        "recommended_action": "requalify"
+      },
+      "required_signals": [
+        "usage_declining",
+        "job_failures",
+        "billing_missing"
+      ],
+      "forbidden_conclusions": [
+        "spend has definitely declined"
+      ]
+    },
+    {
+      "case_id": "DR-012",
+      "description": "Technical champion is active but the economic buyer is absent.",
+      "category": "economic_alignment",
+      "evidence": {
+        "deal": {
+          "age_days": 58,
+          "stage_age_days": 24,
+          "value": 275000
+        },
+        "crm": {
+          "days_since_last_activity": 4,
+          "technical_champion_engaged": true,
+          "economic_buyer_engaged": false
+        },
+        "usage": {
+          "growth_30d_percent": 12.0
+        },
+        "jobs": {
+          "failed_jobs_30d": 2,
+          "total_jobs_30d": 47
+        },
+        "billing": {
+          "spend_growth_30d_percent": 10.0
+        }
+      },
+      "expected": {
+        "risk_level": "medium",
+        "score_min": 40,
+        "score_max": 65,
+        "recommended_action": "investigate"
+      },
+      "required_signals": [
+        "economic_buyer_missing"
+      ],
+      "forbidden_conclusions": []
+    },
+    {
+      "case_id": "DR-013",
+      "description": "Technical champion remains engaged but engineering has restarted an internal build of the orchestration layer.",
+      "category": "build_vs_buy",
+      "evidence": {
+        "deal": {
+          "age_days": 74,
+          "stage_age_days": 38,
+          "value": 450000
+        },
+        "crm": {
+          "days_since_last_activity": 13,
+          "technical_champion_engaged": true,
+          "economic_buyer_engaged": false,
+          "technical_evaluation_completed": true,
+          "internal_build_project": true
+        },
+        "usage": {
+          "growth_30d_percent": 5.0
+        },
+        "jobs": {
+          "failed_jobs_30d": 5,
+          "total_jobs_30d": 33
+        },
+        "billing": {
+          "spend_growth_30d_percent": 1.0
+        }
+      },
+      "expected": {
+        "risk_level": "high",
+        "score_min": 75,
+        "score_max": 100,
+        "recommended_action": "escalate"
+      },
+      "required_signals": [
+        "build_vs_buy_risk",
+        "economic_buyer_missing"
+      ],
+      "forbidden_conclusions": [
+        "customer has already decided not to buy"
+      ]
+    },
+    {
+      "case_id": "DR-014",
+      "description": "Prospect is positive on Hosted.ai but facility power and cooling deployment is delayed.",
+      "category": "external_blocker",
+      "evidence": {
+        "deal": {
+          "age_days": 49,
+          "stage_age_days": 16,
+          "value": 310000
+        },
+        "crm": {
+          "days_since_last_activity": 5,
+          "economic_buyer_engaged": true,
+          "technical_champion_engaged": true,
+          "facility_power_ready": false,
+          "facility_eta_days": 90
+        },
+        "usage": {
+          "growth_30d_percent": 0.0
+        },
+        "jobs": {
+          "failed_jobs_30d": 0,
+          "total_jobs_30d": 0
+        },
+        "billing": {
+          "spend_growth_30d_percent": 0.0
+        }
+      },
+      "expected": {
+        "risk_level": "medium",
+        "score_min": 25,
+        "score_max": 55,
+        "recommended_action": "monitor"
+      },
+      "required_signals": [
+        "external_blocker"
+      ],
+      "forbidden_conclusions": [
+        "prospect is disinterested"
+      ]
+    },
+    {
+      "case_id": "DR-015",
+      "description": "EU sovereignty and compliance requirements create an urgent positive buying driver.",
+      "category": "regulatory_tailwind",
+      "evidence": {
+        "deal": {
+          "age_days": 21,
+          "stage_age_days": 6,
+          "value": 240000
+        },
+        "crm": {
+          "days_since_last_activity": 1,
+          "economic_buyer_engaged": true,
+          "sovereignty_required": true,
+          "eu_region_required": true,
+          "air_gapped_requirement": true
+        },
+        "usage": {
+          "growth_30d_percent": 9.0
+        },
+        "jobs": {
+          "failed_jobs_30d": 1,
+          "total_jobs_30d": 38
+        },
+        "billing": {
+          "spend_growth_30d_percent": 12.0
+        }
+      },
+      "expected": {
+        "risk_level": "low",
+        "score_min": 0,
+        "score_max": 25,
+        "recommended_action": "progress"
+      },
+      "required_signals": [
+        "regulatory_tailwind",
+        "sovereignty_fit"
+      ],
+      "forbidden_conclusions": [
+        "regulation is blocking the deal"
+      ]
+    },
+    {
+      "case_id": "DR-016",
+      "description": "Prospect is engaged and likely closable but is fixated on software price rather than utilization or margin uplift.",
+      "category": "price_sensitive",
+      "evidence": {
+        "deal": {
+          "age_days": 46,
+          "stage_age_days": 17,
+          "value": 140000
+        },
+        "crm": {
+          "days_since_last_activity": 3,
+          "economic_buyer_engaged": true,
+          "price_sensitivity": "high",
+          "roi_conversation_completed": true
+        },
+        "usage": {
+          "growth_30d_percent": 4.0,
+          "current_utilization_percent": 72.0
+        },
+        "jobs": {
+          "failed_jobs_30d": 2,
+          "total_jobs_30d": 43
+        },
+        "billing": {
+          "spend_growth_30d_percent": 2.0
+        }
+      },
+      "expected": {
+        "risk_level": "medium",
+        "score_min": 35,
+        "score_max": 65,
+        "recommended_action": "protect_value"
+      },
+      "required_signals": [
+        "price_sensitivity",
+        "value_risk"
+      ],
+      "forbidden_conclusions": [
+        "deal is unlikely to close"
+      ]
+    },
+    {
+      "case_id": "DR-017",
+      "description": "Prospect is healthy operationally but depends heavily on one anchor customer, creating financial survivability risk.",
+      "category": "financial_fragility",
+      "evidence": {
+        "deal": {
+          "age_days": 39,
+          "stage_age_days": 14,
+          "value": 200000
+        },
+        "crm": {
+          "days_since_last_activity": 4,
+          "economic_buyer_engaged": true,
+          "top_customer_revenue_percent": 78.0,
+          "cash_runway_months": 9
+        },
+        "usage": {
+          "growth_30d_percent": 16.0
+        },
+        "jobs": {
+          "failed_jobs_30d": 1,
+          "total_jobs_30d": 35
+        },
+        "billing": {
+          "spend_growth_30d_percent": 14.0
+        }
+      },
+      "expected": {
+        "risk_level": "medium",
+        "score_min": 45,
+        "score_max": 75,
+        "recommended_action": "qualify"
+      },
+      "required_signals": [
+        "financial_fragility",
+        "customer_concentration"
+      ],
+      "forbidden_conclusions": [
+        "company is insolvent"
+      ]
+    }
+  ]
+}

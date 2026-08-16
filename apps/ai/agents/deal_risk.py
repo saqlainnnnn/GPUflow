@@ -3,6 +3,8 @@ from datetime import date
 from typing import Any
 from uuid import UUID
 
+from pydantic import BaseModel, ConfigDict, Field
+
 from apps.ai.core.llm import LLMRequest, LLMService
 from apps.ai.deal_risk.evidence import DealRiskEvidenceCollector
 from apps.ai.deal_risk.schemas import DealRiskResult
@@ -223,9 +225,22 @@ class DealRiskAgent:
     def _parse_response(
         content: str,
     ) -> DealRiskResult:
+        cleaned = content.strip()
+
+        if cleaned.startswith("```"):
+            lines = cleaned.splitlines()
+
+            if lines and lines[0].strip().startswith("```"):
+                lines = lines[1:]
+
+            if lines and lines[-1].strip() == "```":
+                lines = lines[:-1]
+
+            cleaned = "\n".join(lines).strip()
+
         try:
             payload = json.loads(
-                content,
+                cleaned,
             )
         except json.JSONDecodeError as exc:
             raise ValueError(

@@ -33,6 +33,9 @@ class GroqProvider:
                     "content": request.user_prompt,
                 },
             ],
+            response_format={
+                "type": "json_object",
+            },
         )
 
         content = response.choices[0].message.content
