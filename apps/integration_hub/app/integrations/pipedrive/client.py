@@ -115,6 +115,38 @@ class PipedriveClient:
 
         return body["data"]
 
+    async def get_deal_changelog(
+        self,
+        *,
+        deal_id: int,
+    ) -> list[dict[str, Any]]:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(
+                f"{self.base_url}/deals/{deal_id}/changelog",
+                params={"api_token": self.api_token},
+            )
+
+        response.raise_for_status()
+
+        body = response.json()
+
+        if not body.get("success"):
+            raise RuntimeError(
+                f"Pipedrive API returned unsuccessful response: {body}"
+            )
+
+        data = body.get("data", [])
+
+        if data is None:
+            return []
+
+        if not isinstance(data, list):
+            raise RuntimeError(
+                "Pipedrive deal changelog response contained invalid data"
+            )
+
+        return data
+
     async def get_activities(
         self,
         *,
