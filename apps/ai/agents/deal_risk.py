@@ -149,7 +149,7 @@ class DealRiskAgent:
             )
 
         stage_entered_at = DealRiskAgent._parse_date(
-            deal.get("stage_entered_at"),
+            evidence.get("stage_entered_at"),
         )
 
         last_activity_at = DealRiskAgent._parse_date(

@@ -10,8 +10,10 @@ from apps.ai.tools.crm import (
 )
 from apps.ai.tools.schemas import (
     ActivityToolOutput,
+    DealChangelogToolOutput,
     DealToolOutput,
     GetActivitiesInput,
+    GetDealChangelogInput,
     GetDealInput,
     GetOrganizationInput,
     OrganizationToolOutput,
@@ -294,5 +296,76 @@ async def test_get_activities_translates_missing_deal(
 def test_get_activities_input_rejects_invalid_id():
     with pytest.raises(ValueError):
         GetActivitiesInput(
+            deal_id="not-an-int",
+        )
+
+
+@pytest.mark.asyncio
+async def test_get_deal_includes_created_and_updated_timestamps(
+    crm_tool,
+    pipedrive_client,
+):
+    pipedrive_client.get_deal.return_value = {
+        "id": 456,
+        "title": "Acme H100 Expansion",
+        "value": 125000,
+        "currency": "USD",
+        "status": "open",
+        "stage_id": 7,
+        "org_id": 123,
+        "owner_id": 42,
+        "add_time": "2026-06-01 10:30:00",
+        "update_time": "2026-08-15 14:00:00",
+    }
+
+    result = await crm_tool.get_deal(
+        GetDealInput(deal_id=456),
+    )
+
+    assert result.created_at == "2026-06-01 10:30:00"
+    assert result.updated_at == "2026-08-15 14:00:00"
+    assert result.stage_id == 7
+
+
+@pytest.mark.asyncio
+async def test_get_deal_changelog_returns_structured_history(
+    crm_tool,
+    pipedrive_client,
+):
+    pipedrive_client.get_deal_changelog.return_value = [
+        {
+            "field_key": "stage_id",
+            "old_value": 5,
+            "new_value": 7,
+            "timestamp": "2026-07-01 12:00:00",
+        },
+        {
+            "field_key": "stage_id",
+            "old_value": 4,
+            "new_value": 5,
+            "timestamp": "2026-06-20 09:00:00",
+        },
+    ]
+
+    result = await crm_tool.get_deal_changelog(
+        GetDealChangelogInput(deal_id=456),
+    )
+
+    assert len(result) == 2
+
+    assert isinstance(result[0], DealChangelogToolOutput)
+    assert result[0].field_key == "stage_id"
+    assert result[0].old_value == 5
+    assert result[0].new_value == 7
+    assert result[0].timestamp == "2026-07-01 12:00:00"
+
+    pipedrive_client.get_deal_changelog.assert_awaited_once_with(
+        deal_id=456,
+    )
+
+
+def test_get_deal_changelog_input_rejects_invalid_id():
+    with pytest.raises(ValueError):
+        GetDealChangelogInput(
             deal_id="not-an-int",
         )

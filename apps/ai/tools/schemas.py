@@ -1,11 +1,33 @@
 from datetime import date
+from decimal import Decimal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class GetCustomerInput(BaseModel):
     customer_id: UUID
+
+
+class CreateCustomerInput(BaseModel):
+    external_id: str = Field(
+        min_length=1,
+        max_length=100,
+    )
+    company_name: str = Field(
+        min_length=1,
+        max_length=255,
+    )
+    email: EmailStr
+    country: str = Field(
+        min_length=2,
+        max_length=2,
+    )
+    status: str = Field(
+        default="active",
+        min_length=1,
+        max_length=50,
+    )
 
 
 class CustomerToolOutput(BaseModel):
@@ -47,6 +69,21 @@ class DealToolOutput(BaseModel):
     stage_id: int | None = None
     organization_id: int | None = None
     owner_id: int | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+
+class GetDealChangelogInput(BaseModel):
+    deal_id: int
+
+
+class DealChangelogToolOutput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    field_key: str
+    old_value: int | str | None = None
+    new_value: int | str | None = None
+    timestamp: str
 
 
 class GetActivitiesInput(BaseModel):
@@ -66,6 +103,7 @@ class ActivityToolOutput(BaseModel):
     deal_id: int | None = None
     organization_id: int | None = None
     person_id: int | None = None
+    updated_at: str | None = None
 
 
 class GetUsageInput(BaseModel):
@@ -122,3 +160,46 @@ class AllocationToolOutput(BaseModel):
     gpu_count: int
     region: str
     status: str
+
+
+class GetJobsInput(BaseModel):
+    customer_id: UUID
+
+
+class JobToolOutput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: UUID
+    external_id: str
+    customer_id: UUID
+    allocation_id: UUID
+    gpu_type: str
+    gpu_count: int
+    status: str
+    duration_seconds: int
+    failure_reason: str | None = None
+
+
+class GetBillingInput(BaseModel):
+    customer_id: UUID
+
+
+class BillingLineItemToolOutput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    usage_event_id: UUID
+    timestamp: str | None = None
+    gpu_type: str
+    gpu_hours: float
+    rate_per_gpu_hour: Decimal
+    amount: Decimal
+
+
+class BillingToolOutput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    customer_id: UUID
+    currency: str
+    line_items: list[BillingLineItemToolOutput]
+    total_gpu_hours: float
+    subtotal: Decimal

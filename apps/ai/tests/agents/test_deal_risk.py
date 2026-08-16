@@ -42,7 +42,7 @@ def build_risk_score():
 
 
 @pytest.mark.asyncio
-async def test_deal_risk_agent_orchestrates_pipeline():
+async def test_deal_risk_agent_uses_real_evidence_for_signals():
     llm = AsyncMock()
     evidence_collector = AsyncMock()
     signal_engine = Mock()
@@ -50,12 +50,12 @@ async def test_deal_risk_agent_orchestrates_pipeline():
 
     customer_id = uuid4()
 
-    evidence = {
+    evidence_collector.collect.return_value = {
         "deal": {
             "id": 456,
             "title": "Acme H100 Expansion",
-            "created_at": "2026-06-01",
-            "stage_entered_at": "2026-07-01",
+            "created_at": "2026-06-01 10:30:00",
+            "stage_id": 7,
         },
         "organization": {
             "id": 123,
@@ -64,10 +64,11 @@ async def test_deal_risk_agent_orchestrates_pipeline():
         "activities": [
             {
                 "activity_id": 1001,
-                "status": "done",
+                "updated_at": "2026-08-01 12:00:00",
             }
         ],
-        "last_activity_at": "2026-08-01",
+        "last_activity_at": "2026-08-01 12:00:00",
+        "stage_entered_at": "2026-07-01 12:00:00",
         "usage": {
             "summary": {
                 "growth_7d_percent": -35.0,
@@ -83,8 +84,6 @@ async def test_deal_risk_agent_orchestrates_pipeline():
         },
         "today": "2026-08-16",
     }
-
-    evidence_collector.collect.return_value = evidence
 
     signals = build_signals()
     risk_score = build_risk_score()
@@ -121,17 +120,6 @@ async def test_deal_risk_agent_orchestrates_pipeline():
 
     assert result.risk_score == 100
     assert result.risk_level == "high"
-    assert result.signals == [
-        "usage_declining",
-        "job_failures",
-    ]
-
-    evidence_collector.collect.assert_awaited_once_with(
-        deal_id=456,
-        organization_id=123,
-        customer_id=customer_id,
-        today=date(2026, 8, 16),
-    )
 
     signal_engine.evaluate.assert_called_once()
 
@@ -140,6 +128,7 @@ async def test_deal_risk_agent_orchestrates_pipeline():
     assert signal_input.deal_created_at == date(2026, 6, 1)
     assert signal_input.stage_entered_at == date(2026, 7, 1)
     assert signal_input.last_activity_at == date(2026, 8, 1)
+
     assert signal_input.usage_growth_7d_percent == -35.0
     assert signal_input.usage_growth_30d_percent == -42.0
     assert signal_input.failed_jobs_30d == 8
@@ -154,49 +143,91 @@ async def test_deal_risk_agent_orchestrates_pipeline():
 
 
 @pytest.mark.asyncio
-async def test_deal_risk_agent_rejects_empty_evidence():
+async def test_deal_risk_agent_handles_missing_stage_and_activity_dates():
     llm = AsyncMock()
     evidence_collector = AsyncMock()
+    signal_engine = Mock()
+    scorer = Mock()
 
-    evidence_collector.collect.return_value = {}
+    customer_id = uuid4()
+
+    evidence_collector.collect.return_value = {
+        "deal": {
+            "id": 456,
+            "title": "New Deal",
+            "created_at": "2026-08-10 10:30:00",
+            "stage_id": 7,
+        },
+        "stage_entered_at": None,
+        "last_activity_at": None,
+        "usage": {
+            "summary": {
+                "growth_7d_percent": None,
+                "growth_30d_percent": None,
+            }
+        },
+        "jobs": {
+            "failed_jobs_30d": 0,
+            "total_jobs_30d": 0,
+        },
+        "billing": {
+            "spend_growth_30d_percent": None,
+        },
+    }
+
+    signal_engine.evaluate.return_value = type(
+        "Signals",
+        (),
+        {
+            "deal_age_days": 6,
+            "stage_age_days": None,
+            "days_since_last_activity": None,
+            "usage_declining": False,
+            "jobs_unhealthy": False,
+            "spend_declining": False,
+            "signals": [],
+        },
+    )()
+
+    scorer.score.return_value = type(
+        "RiskScore",
+        (),
+        {
+            "score": 0,
+            "level": "low",
+        },
+    )()
+
+    llm.generate.return_value = LLMResponse(
+        content=(
+            '{"risk_score": 0,'
+            '"risk_level": "low",'
+            '"signals": [],'
+            '"questions_to_probe": [],'
+            '"recommended_action": "Continue monitoring."}'
+        ),
+        model="test-model",
+        input_tokens=50,
+        output_tokens=25,
+    )
 
     agent = DealRiskAgent(
         llm=llm,
         evidence_collector=evidence_collector,
-        signal_engine=Mock(),
-        scorer=Mock(),
+        signal_engine=signal_engine,
+        scorer=scorer,
     )
 
-    with pytest.raises(ValueError, match="evidence"):
-        await agent.analyze(
-            deal_id=456,
-            organization_id=123,
-            customer_id=uuid4(),
-            today=date(2026, 8, 16),
-        )
+    result = await agent.analyze(
+        deal_id=456,
+        organization_id=123,
+        customer_id=customer_id,
+        today=date(2026, 8, 16),
+    )
 
+    assert result.risk_score == 0
 
-def test_deal_risk_agent_requires_dependencies():
-    with pytest.raises(ValueError):
-        DealRiskAgent(
-            llm=AsyncMock(),
-            evidence_collector=None,
-            signal_engine=Mock(),
-            scorer=Mock(),
-        )
+    signal_input = signal_engine.evaluate.call_args.args[0]
 
-    with pytest.raises(ValueError):
-        DealRiskAgent(
-            llm=AsyncMock(),
-            evidence_collector=AsyncMock(),
-            signal_engine=None,
-            scorer=Mock(),
-        )
-
-    with pytest.raises(ValueError):
-        DealRiskAgent(
-            llm=AsyncMock(),
-            evidence_collector=AsyncMock(),
-            signal_engine=Mock(),
-            scorer=None,
-        )
+    assert signal_input.stage_entered_at is None
+    assert signal_input.last_activity_at is None

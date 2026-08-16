@@ -2,8 +2,10 @@ from typing import Any, Protocol
 
 from apps.ai.tools.schemas import (
     ActivityToolOutput,
+    DealChangelogToolOutput,
     DealToolOutput,
     GetActivitiesInput,
+    GetDealChangelogInput,
     GetDealInput,
     GetOrganizationInput,
     OrganizationToolOutput,
@@ -21,6 +23,12 @@ class PipedriveClientProtocol(Protocol):
         deal_id: int,
     ) -> dict[str, Any]: ...
 
+    async def get_deal_changelog(
+        self,
+        *,
+        deal_id: int,
+    ) -> list[dict[str, Any]]: ...
+
     async def get_activities(
         self,
         *,
@@ -33,6 +41,10 @@ class CRMOrganizationNotFoundError(Exception):
 
 
 class CRMDealNotFoundError(Exception):
+    pass
+
+
+class CRMDealChangelogNotFoundError(Exception):
     pass
 
 
@@ -124,7 +136,49 @@ class CRMTool:
             stage_id=deal.get("stage_id"),
             organization_id=deal.get("org_id"),
             owner_id=deal.get("owner_id"),
+            created_at=deal.get("add_time"),
+            updated_at=deal.get("update_time"),
         )
+
+    async def get_deal_changelog(
+        self,
+        data: GetDealChangelogInput,
+    ) -> list[DealChangelogToolOutput]:
+        try:
+            changes = await self.pipedrive_client.get_deal_changelog(
+                deal_id=data.deal_id,
+            )
+        except ValueError as exc:
+            raise CRMDealChangelogNotFoundError(
+                f"Deal changelog for '{data.deal_id}' not found",
+            ) from exc
+
+        results: list[DealChangelogToolOutput] = []
+
+        for change in changes:
+            field_key = change.get("field_key")
+            timestamp = change.get("timestamp")
+
+            if not field_key:
+                raise ValueError(
+                    "Pipedrive deal changelog response missing field_key",
+                )
+
+            if not timestamp:
+                raise ValueError(
+                    "Pipedrive deal changelog response missing timestamp",
+                )
+
+            results.append(
+                DealChangelogToolOutput(
+                    field_key=field_key,
+                    old_value=change.get("old_value"),
+                    new_value=change.get("new_value"),
+                    timestamp=timestamp,
+                )
+            )
+
+        return results
 
     async def get_activities(
         self,
@@ -182,6 +236,7 @@ class CRMTool:
                     deal_id=activity.get("deal_id"),
                     organization_id=activity.get("org_id"),
                     person_id=activity.get("person_id"),
+                    updated_at=activity.get("update_time"),
                 )
             )
 
