@@ -5,6 +5,7 @@ from apps.ai.tools.schemas import (
     CreateCustomerInput,
     CustomerToolOutput,
     GetCustomerInput,
+    UpdateCustomerInput,
 )
 
 
@@ -16,6 +17,12 @@ class CustomerServiceProtocol(Protocol):
 
     async def create_customer(
         self,
+        data,
+    ): ...
+
+    async def update_customer(
+        self,
+        customer_id: UUID,
         data,
     ): ...
 
@@ -77,6 +84,33 @@ class CustomerTool:
             raise CustomerAlreadyExistsToolError(
                 f"Customer with external_id "
                 f"'{data.external_id}' already exists",
+            ) from exc
+
+        return CustomerToolOutput(
+            id=customer.id,
+            external_id=customer.external_id,
+            company_name=customer.company_name,
+            email=customer.email,
+            country=customer.country,
+            status=customer.status,
+        )
+
+    async def update_customer(
+        self,
+        data: UpdateCustomerInput,
+    ) -> CustomerToolOutput:
+        from apps.gpuaas.app.services.customer import (
+            CustomerNotFoundError,
+        )
+
+        try:
+            customer = await self.customer_service.update_customer(
+                data.customer_id,
+                data,
+            )
+        except CustomerNotFoundError as exc:
+            raise CustomerNotFoundToolError(
+                f"Customer '{data.customer_id}' not found",
             ) from exc
 
         return CustomerToolOutput(

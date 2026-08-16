@@ -2,7 +2,7 @@ from datetime import date
 from decimal import Decimal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
 
 
 class GetCustomerInput(BaseModel):
@@ -203,3 +203,53 @@ class BillingToolOutput(BaseModel):
     line_items: list[BillingLineItemToolOutput]
     total_gpu_hours: float
     subtotal: Decimal
+
+class UpdateCustomerInput(BaseModel):
+    customer_id: UUID
+    company_name: str = Field(
+        min_length=1,
+        max_length=255,
+    )
+    email: EmailStr
+    country: str = Field(
+        min_length=2,
+        max_length=2,
+    )
+    status: str = Field(
+        min_length=1,
+        max_length=50,
+    )
+    sync_origin: str = Field(
+        default="gpuflow",
+        max_length=50,
+    )
+
+class UpdatePipedriveOrganizationInput(BaseModel):
+    organization_id: int
+    name: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=255,
+    )
+    address: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=500,
+    )
+
+    @model_validator(mode="after")
+    def validate_update_fields(self):
+        if self.name is None and self.address is None:
+            raise ValueError(
+                "At least one organization field must be provided"
+            )
+
+        return self
+
+class PipedriveOrganizationToolOutput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: int
+    name: str
+    address: str | None = None
+    owner_id: int | None = None

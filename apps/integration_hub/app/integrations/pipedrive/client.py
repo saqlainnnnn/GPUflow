@@ -181,6 +181,37 @@ class PipedriveClient:
             )
 
         return data
+    
+    async def update_deal(
+        self,
+        deal_id: int,
+        *,
+        fields: dict[str, Any],
+    ) -> dict[str, Any]:
+        if not fields:
+            raise ValueError(
+                "At least one deal field must be provided"
+            )
+
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.patch(
+                f"{self.base_url}/deals/{deal_id}",
+                params={
+                    "api_token": self.api_token,
+                },
+                json=fields,
+            )
+
+        response.raise_for_status()
+
+        body = response.json()
+
+        if not body.get("success"):
+            raise RuntimeError(
+                f"Pipedrive API returned unsuccessful response: {body}"
+            )
+
+        return body["data"]
 
 
 def get_pipedrive_client() -> PipedriveClient:

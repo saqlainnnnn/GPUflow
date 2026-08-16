@@ -1,19 +1,11 @@
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
 
-
 from apps.ai.deal_risk.evidence import (
     DealRiskEvidenceCollector,
-)
-from apps.ai.tools.schemas import (
-    GetActivitiesInput,
-    GetAllocationsInput,
-    GetDealInput,
-    GetOrganizationInput,
-    GetUsageInput,
 )
 
 
@@ -94,7 +86,7 @@ async def test_collects_deal_risk_evidence():
                     2026,
                     8,
                     11,
-                    tzinfo=timezone.utc,
+                    tzinfo=UTC,
                 ),
                 "amount": "1500.00",
             },
@@ -103,7 +95,7 @@ async def test_collects_deal_risk_evidence():
                     2026,
                     7,
                     7,
-                    tzinfo=timezone.utc,
+                    tzinfo=UTC,
                 ),
                 "amount": "2000.00",
             },

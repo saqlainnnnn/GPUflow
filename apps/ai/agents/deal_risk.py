@@ -3,33 +3,20 @@ from datetime import date
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
-
 from apps.ai.core.llm import LLMRequest, LLMService
 from apps.ai.deal_risk.evidence import DealRiskEvidenceCollector
+from apps.ai.deal_risk.schemas import DealRiskResult
 from apps.ai.deal_risk.scoring import DealRiskScorer
 from apps.ai.deal_risk.signals import (
     DealRiskSignalEngine,
     DealRiskSignalInput,
 )
+from apps.ai.deal_risk.writeback import DealRiskWriteback
 from apps.ai.prompts.deal_risk import (
     DEAL_RISK_PROMPT_VERSION,
     SYSTEM_PROMPT,
     build_deal_risk_prompt,
 )
-
-
-class DealRiskResult(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    risk_score: int = Field(
-        ge=0,
-        le=100,
-    )
-    risk_level: str
-    signals: list[str]
-    questions_to_probe: list[str]
-    recommended_action: str
 
 
 class DealRiskAgent:
@@ -40,6 +27,7 @@ class DealRiskAgent:
         evidence_collector: DealRiskEvidenceCollector,
         signal_engine: DealRiskSignalEngine,
         scorer: DealRiskScorer,
+        writeback: DealRiskWriteback | None = None,
     ) -> None:
         if evidence_collector is None:
             raise ValueError(
@@ -60,6 +48,7 @@ class DealRiskAgent:
         self.evidence_collector = evidence_collector
         self.signal_engine = signal_engine
         self.scorer = scorer
+        self.writeback = writeback
 
     async def analyze(
         self,
@@ -68,6 +57,7 @@ class DealRiskAgent:
         organization_id: int,
         customer_id: UUID,
         today: date,
+        writeback: bool = False,
     ) -> DealRiskResult:
         evidence = await self.evidence_collector.collect(
             deal_id=deal_id,
@@ -123,9 +113,22 @@ class DealRiskAgent:
             )
         )
 
-        return self._parse_response(
+        result = self._parse_response(
             response.content,
         )
+
+        if writeback:
+            if self.writeback is None:
+                raise ValueError(
+                    "writeback requested but no writeback service configured",
+                )
+
+            await self.writeback.write(
+                deal_id=deal_id,
+                result=result,
+            )
+
+        return result
 
     @staticmethod
     def _build_signal_input(
@@ -133,11 +136,26 @@ class DealRiskAgent:
         evidence: dict[str, Any],
         today: date,
     ) -> DealRiskSignalInput:
-        deal = evidence.get("deal", {})
-        usage = evidence.get("usage", {})
-        usage_summary = usage.get("summary", {})
-        jobs = evidence.get("jobs", {})
-        billing = evidence.get("billing", {})
+        deal = evidence.get(
+            "deal",
+            {},
+        )
+        usage = evidence.get(
+            "usage",
+            {},
+        )
+        usage_summary = usage.get(
+            "summary",
+            {},
+        )
+        jobs = evidence.get(
+            "jobs",
+            {},
+        )
+        billing = evidence.get(
+            "billing",
+            {},
+        )
 
         deal_created_at = DealRiskAgent._parse_date(
             deal.get("created_at"),
@@ -149,11 +167,15 @@ class DealRiskAgent:
             )
 
         stage_entered_at = DealRiskAgent._parse_date(
-            evidence.get("stage_entered_at"),
+            evidence.get(
+                "stage_entered_at",
+            ),
         )
 
         last_activity_at = DealRiskAgent._parse_date(
-            evidence.get("last_activity_at"),
+            evidence.get(
+                "last_activity_at",
+            ),
         )
 
         return DealRiskSignalInput(
@@ -202,7 +224,9 @@ class DealRiskAgent:
         content: str,
     ) -> DealRiskResult:
         try:
-            payload = json.loads(content)
+            payload = json.loads(
+                content,
+            )
         except json.JSONDecodeError as exc:
             raise ValueError(
                 "Deal risk LLM response was not valid JSON",
