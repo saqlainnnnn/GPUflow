@@ -142,6 +142,10 @@ class DealRiskAgent:
             "deal",
             {},
         )
+        crm = evidence.get(
+            "crm",
+            {},
+        )
         usage = evidence.get(
             "usage",
             {},
@@ -200,6 +204,39 @@ class DealRiskAgent:
                 "spend_growth_30d_percent",
             ),
             today=today,
+            technical_champion_engaged=crm.get(
+                "technical_champion_engaged",
+            ),
+            economic_buyer_engaged=crm.get(
+                "economic_buyer_engaged",
+            ),
+            internal_build_project=crm.get(
+                "internal_build_project",
+            ),
+            facility_power_ready=crm.get(
+                "facility_power_ready",
+            ),
+            sovereignty_required=crm.get(
+                "sovereignty_required",
+            ),
+            eu_region_required=crm.get(
+                "eu_region_required",
+            ),
+            air_gapped_requirement=crm.get(
+                "air_gapped_requirement",
+            ),
+            price_sensitivity=crm.get(
+                "price_sensitivity",
+            ),
+            roi_conversation_completed=crm.get(
+                "roi_conversation_completed",
+            ),
+            top_customer_revenue_percent=crm.get(
+                "top_customer_revenue_percent",
+            ),
+            cash_runway_months=crm.get(
+                "cash_runway_months",
+            ),
         )
 
     @staticmethod

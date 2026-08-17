@@ -2,11 +2,11 @@
   "model": "llama-3.3-70b-versatile",
   "total_cases": 17,
   "executed_cases": 17,
-  "passed_cases": 1,
-  "pass_rate": 5.88,
-  "average_latency_ms": 476.93,
-  "total_input_tokens": 7956,
-  "total_output_tokens": 1960,
+  "passed_cases": 0,
+  "pass_rate": 0.0,
+  "average_latency_ms": 4035.15,
+  "total_input_tokens": 23158,
+  "total_output_tokens": 2895,
   "cases": [
     {
       "case_id": "DR-001",
@@ -20,12 +20,16 @@
       "actual": {
         "risk_score": 0,
         "risk_level": "low",
-        "signals": [],
-        "questions_to_probe": [
-          "What are the customer's expectations for future growth and how can we support them?",
-          "How can we help the customer optimize their job success rate, given the 1 failed job in the last 30 days?"
+        "signals": [
+          "Strong positive buying signals with high growth in usage and spend",
+          "Economic buyer and technical champion are engaged",
+          "Low job failure rate and increasing spend"
         ],
-        "recommended_action": "Schedule a call with the customer to discuss their usage growth, job health, and potential opportunities for upselling or cross-selling"
+        "questions_to_probe": [
+          "What are the key factors driving the 18% and 38% growth in usage over the past 7 and 30 days?",
+          "How does the current spend growth align with the buyer's expectations and budget?"
+        ],
+        "recommended_action": "Progress the deal by scheduling a follow-up meeting to discuss the buyer's ongoing needs and explore potential expansion opportunities"
       },
       "evaluation": {
         "case_id": "DR-001",
@@ -40,11 +44,11 @@
       },
       "telemetry": {
         "model": "llama-3.3-70b-versatile",
-        "prompt_version": "deal_risk_v1",
-        "input_tokens": 467,
-        "output_tokens": 108,
-        "total_tokens": 575,
-        "latency_ms": 547.48,
+        "prompt_version": "deal_risk_v2",
+        "input_tokens": 1356,
+        "output_tokens": 143,
+        "total_tokens": 1499,
+        "latency_ms": 853.76,
         "success": true,
         "error": null
       }
@@ -59,16 +63,18 @@
         "recommended_action": "progress"
       },
       "actual": {
-        "risk_score": 20,
+        "risk_score": 15,
         "risk_level": "low",
         "signals": [
-          "deal_stale"
+          "Recent procurement start indicates positive commercial progress",
+          "Economic buyer engagement is a strong positive signal",
+          "Usage and spend growth suggest healthy adoption"
         ],
         "questions_to_probe": [
           "What are the next steps in the procurement process?",
-          "Are there any concerns or objections from the economic buyer?"
+          "Are there any specific concerns or blockers from the economic buyer's perspective?"
         ],
-        "recommended_action": "Schedule a follow-up meeting to discuss deal progress and address any potential concerns"
+        "recommended_action": "Progress the deal, request a meeting to discuss procurement next steps and address any potential concerns"
       },
       "evaluation": {
         "case_id": "DR-002",
@@ -83,11 +89,11 @@
       },
       "telemetry": {
         "model": "llama-3.3-70b-versatile",
-        "prompt_version": "deal_risk_v1",
-        "input_tokens": 460,
-        "output_tokens": 86,
-        "total_tokens": 546,
-        "latency_ms": 413.81,
+        "prompt_version": "deal_risk_v2",
+        "input_tokens": 1349,
+        "output_tokens": 118,
+        "total_tokens": 1467,
+        "latency_ms": 641.6,
         "success": true,
         "error": null
       }
@@ -102,16 +108,16 @@
         "recommended_action": "progress"
       },
       "actual": {
-        "risk_score": 20,
+        "risk_score": 10,
         "risk_level": "low",
         "signals": [
-          "deal_stale"
+          "Strong growth in usage and spend over the past 30 days",
+          "Recent activity within the last 2 days",
+          "Economic buyer is engaged",
+          "Low job failure rate"
         ],
-        "questions_to_probe": [
-          "What are the current pain points or challenges the customer is facing?",
-          "Are there any upcoming projects or initiatives that could impact GPU usage?"
-        ],
-        "recommended_action": "Schedule a call with the customer to discuss their current usage and provide guidance on optimizing GPU utilization, and explore potential upsell opportunities"
+        "questions_to_probe": [],
+        "recommended_action": "Progress to next stage, maintaining regular communication with the economic buyer to ensure continued alignment and growth."
       },
       "evaluation": {
         "case_id": "DR-003",
@@ -126,11 +132,11 @@
       },
       "telemetry": {
         "model": "llama-3.3-70b-versatile",
-        "prompt_version": "deal_risk_v1",
-        "input_tokens": 465,
-        "output_tokens": 102,
-        "total_tokens": 567,
-        "latency_ms": 414.58,
+        "prompt_version": "deal_risk_v2",
+        "input_tokens": 1354,
+        "output_tokens": 98,
+        "total_tokens": 1452,
+        "latency_ms": 554.21,
         "success": true,
         "error": null
       }
@@ -145,37 +151,39 @@
         "recommended_action": "monitor"
       },
       "actual": {
-        "risk_score": 60,
-        "risk_level": "high",
+        "risk_score": 45,
+        "risk_level": "medium",
         "signals": [
-          "deal_stale",
-          "no_recent_activity"
+          "No recent activity for 18 days",
+          "Deal age is 82 days, indicating potential stall",
+          "Stage age is 41 days, suggesting slow progress",
+          "Low job failure rate and growing spend indicate healthy usage"
         ],
         "questions_to_probe": [
-          "What are the current pain points or challenges the customer is facing?",
-          "Are there any changes in the customer's priorities or budget?",
-          "What is the customer's current perception of our solution?"
+          "What are the primary factors delaying progress in the current stage?",
+          "Are there any technical or commercial blockers that need to be addressed?",
+          "Is the economic buyer still engaged and supportive of the opportunity?"
         ],
-        "recommended_action": "Schedule a meeting with the customer to review the current status of the deal and address any concerns or questions they may have"
+        "recommended_action": "Investigate the cause of inactivity and re-engage the buyer to assess their current priorities and potential roadblocks"
       },
       "evaluation": {
         "case_id": "DR-004",
         "schema_valid": true,
-        "risk_level_correct": false,
+        "risk_level_correct": true,
         "score_within_range": true,
-        "required_signals_present": true,
+        "required_signals_present": false,
         "forbidden_claims_absent": true,
         "recommended_action_correct": false,
-        "canonical_recommended_action": "progress",
+        "canonical_recommended_action": "investigate",
         "passed": false
       },
       "telemetry": {
         "model": "llama-3.3-70b-versatile",
-        "prompt_version": "deal_risk_v1",
-        "input_tokens": 458,
-        "output_tokens": 118,
-        "total_tokens": 576,
-        "latency_ms": 473.23,
+        "prompt_version": "deal_risk_v2",
+        "input_tokens": 1347,
+        "output_tokens": 155,
+        "total_tokens": 1502,
+        "latency_ms": 676.99,
         "success": true,
         "error": null
       }
@@ -190,38 +198,38 @@
         "recommended_action": "investigate"
       },
       "actual": {
-        "risk_score": 25,
-        "risk_level": "low",
+        "risk_score": 40,
+        "risk_level": "medium",
         "signals": [
-          "deal_stale",
-          "declining_usage_growth",
-          "recent_inactivity"
+          "Declining usage growth over 7 and 30 days",
+          "Declining spend growth over 30 days",
+          "Economic buyer is engaged but recent activity has been low"
         ],
         "questions_to_probe": [
-          "What are the primary reasons for the decline in usage growth and spend?",
-          "Can we schedule a call with the economic buyer to discuss their current needs and priorities?",
-          "What steps can we take to revitalize the deal and increase engagement?"
+          "What are the primary reasons for the decline in usage and spend growth?",
+          "Are there any external blockers or internal issues affecting the buyer's ability to proceed?",
+          "Can we confirm the buyer's current priorities and timeline for this opportunity?"
         ],
-        "recommended_action": "Schedule a call with the economic buyer to discuss their current needs, address any concerns, and explore opportunities to revitalize the deal."
+        "recommended_action": "Investigate the decline in usage and spend growth, and re-engage with the buyer to understand their current priorities and any potential blockers"
       },
       "evaluation": {
         "case_id": "DR-005",
         "schema_valid": true,
-        "risk_level_correct": false,
-        "score_within_range": false,
+        "risk_level_correct": true,
+        "score_within_range": true,
         "required_signals_present": false,
         "forbidden_claims_absent": true,
-        "recommended_action_correct": false,
-        "canonical_recommended_action": "progress",
+        "recommended_action_correct": true,
+        "canonical_recommended_action": "investigate",
         "passed": false
       },
       "telemetry": {
         "model": "llama-3.3-70b-versatile",
-        "prompt_version": "deal_risk_v1",
-        "input_tokens": 465,
-        "output_tokens": 136,
-        "total_tokens": 601,
-        "latency_ms": 506.96,
+        "prompt_version": "deal_risk_v2",
+        "input_tokens": 1354,
+        "output_tokens": 156,
+        "total_tokens": 1510,
+        "latency_ms": 566.85,
         "success": true,
         "error": null
       }
@@ -236,37 +244,40 @@
         "recommended_action": "investigate"
       },
       "actual": {
-        "risk_score": 60,
+        "risk_score": 45,
         "risk_level": "medium",
         "signals": [
-          "deal_stale",
-          "job_failures"
+          "deal has been in current stage for 20 days, which may indicate slow progress",
+          "there have been 14 failed jobs in the last 30 days, which could indicate technical issues or dissatisfaction",
+          "economic buyer is engaged, which is a positive signal",
+          "usage and spend are growing, albeit slowly, indicating some level of satisfaction with the service"
         ],
         "questions_to_probe": [
-          "What is causing the high number of failed jobs in the last 30 days?",
-          "Is the economic buyer still engaged and what are their current priorities?",
-          "What is the customer's current satisfaction level with the service?"
+          "What are the primary reasons for the job failures, and are they related to our service or the buyer's usage patterns?",
+          "How does the buyer plan to address the job failure issues, and what support do they need from us?",
+          "What are the next steps the buyer envisions in the sales process, and what are their key decision criteria?",
+          "Are there any external factors, such as power or cooling constraints, that could be impacting the buyer's ability to scale their usage?"
         ],
-        "recommended_action": "Schedule a call with the customer to discuss the high job failure rate and understand their current needs and priorities."
+        "recommended_action": "investigate the causes of job failures and their impact on the buyer's decision process, while also exploring ways to accelerate the sales process and address any external blockers"
       },
       "evaluation": {
         "case_id": "DR-006",
         "schema_valid": true,
         "risk_level_correct": true,
         "score_within_range": true,
-        "required_signals_present": true,
+        "required_signals_present": false,
         "forbidden_claims_absent": true,
         "recommended_action_correct": true,
         "canonical_recommended_action": "investigate",
-        "passed": true
+        "passed": false
       },
       "telemetry": {
         "model": "llama-3.3-70b-versatile",
-        "prompt_version": "deal_risk_v1",
-        "input_tokens": 458,
-        "output_tokens": 120,
-        "total_tokens": 578,
-        "latency_ms": 415.03,
+        "prompt_version": "deal_risk_v2",
+        "input_tokens": 1347,
+        "output_tokens": 249,
+        "total_tokens": 1596,
+        "latency_ms": 969.47,
         "success": true,
         "error": null
       }
@@ -281,28 +292,29 @@
         "recommended_action": "requalify"
       },
       "actual": {
-        "risk_score": 100,
+        "risk_score": 90,
         "risk_level": "high",
         "signals": [
-          "deal_stale",
-          "no_recent_activity",
-          "usage_declining",
-          "job_failures",
-          "spend_declining"
+          "Declining usage over the last 7 and 30 days indicates potential dissatisfaction or lack of value realization",
+          "High job failure rate over the last 30 days suggests technical issues or incompatibility",
+          "Spend decline over the last 30 days may indicate a loss of interest or budget constraints",
+          "Absence of economic buyer engagement raises concerns about deal sponsorship and priority",
+          "Lack of recent activity and deal staleness suggest potential loss of momentum"
         ],
         "questions_to_probe": [
           "What are the primary reasons for the decline in usage and spend?",
-          "Are there any technical issues causing job failures?",
-          "How can we re-engage the key decision-makers to move the deal forward?"
+          "Are there any technical issues or compatibility problems that need to be addressed?",
+          "Is the economic buyer available for engagement, and what are their current priorities?",
+          "Are there any external factors, such as regulatory or sovereignty requirements, that could be impacting the deal?"
         ],
-        "recommended_action": "Escalate the deal to a senior sales manager and schedule a call with the customer to address concerns and re-establish momentum"
+        "recommended_action": "Escalate to sales manager and re-engage with the technical champion to understand the reasons behind the decline in usage and spend, while also attempting to schedule a meeting with the economic buyer to re-establish alignment and priority"
       },
       "evaluation": {
         "case_id": "DR-007",
         "schema_valid": true,
         "risk_level_correct": true,
         "score_within_range": true,
-        "required_signals_present": true,
+        "required_signals_present": false,
         "forbidden_claims_absent": true,
         "recommended_action_correct": false,
         "canonical_recommended_action": "escalate",
@@ -310,11 +322,11 @@
       },
       "telemetry": {
         "model": "llama-3.3-70b-versatile",
-        "prompt_version": "deal_risk_v1",
-        "input_tokens": 490,
-        "output_tokens": 140,
-        "total_tokens": 630,
-        "latency_ms": 535.65,
+        "prompt_version": "deal_risk_v2",
+        "input_tokens": 1386,
+        "output_tokens": 251,
+        "total_tokens": 1637,
+        "latency_ms": 1008.16,
         "success": true,
         "error": null
       }
@@ -329,41 +341,42 @@
         "recommended_action": "escalate"
       },
       "actual": {
-        "risk_score": 100,
+        "risk_score": 85,
         "risk_level": "high",
         "signals": [
-          "deal_stale",
-          "no_recent_activity",
-          "usage_declining",
-          "job_failures",
-          "spend_declining"
+          "Deal has been stagnant for 55 days in the current stage",
+          "Lack of recent activity for 27 days",
+          "Declining usage over the last 30 days",
+          "High job failure rate over the last 30 days",
+          "Spend decline over the last 30 days",
+          "Economic buyer is not engaged"
         ],
         "questions_to_probe": [
-          "What are the primary reasons for the decline in usage and spend?",
-          "Are there any technical issues causing the high number of failed jobs?",
-          "Is the economic buyer engaged or aware of the current issues and progress?",
-          "Are there any upcoming events or milestones that could impact the deal's progress?"
+          "What are the primary reasons for the decline in usage and spend over the last 30 days?",
+          "Are there any external blockers such as power, cooling, or data-center readiness issues?",
+          "Is the technical champion still actively engaged and supportive of the purchase?",
+          "What is the current perceived value of our solution by the buyer, and is price a major concern?"
         ],
-        "recommended_action": "Schedule an urgent meeting with the customer to discuss the declining usage, spend, and job failures, and work together to identify solutions and re-engage the economic buyer."
+        "recommended_action": "Investigate the root causes of the declining usage and spend, and re-engage with both the technical champion and the economic buyer to understand the current status and perceived value of the opportunity."
       },
       "evaluation": {
         "case_id": "DR-008",
         "schema_valid": true,
         "risk_level_correct": true,
         "score_within_range": true,
-        "required_signals_present": true,
+        "required_signals_present": false,
         "forbidden_claims_absent": true,
         "recommended_action_correct": false,
-        "canonical_recommended_action": "monitor",
+        "canonical_recommended_action": "investigate",
         "passed": false
       },
       "telemetry": {
         "model": "llama-3.3-70b-versatile",
-        "prompt_version": "deal_risk_v1",
-        "input_tokens": 477,
-        "output_tokens": 167,
-        "total_tokens": 644,
-        "latency_ms": 687.3,
+        "prompt_version": "deal_risk_v2",
+        "input_tokens": 1373,
+        "output_tokens": 227,
+        "total_tokens": 1600,
+        "latency_ms": 925.81,
         "success": true,
         "error": null
       }
@@ -381,13 +394,15 @@
         "risk_score": 25,
         "risk_level": "low",
         "signals": [
-          "deal_stale"
+          "Positive growth in usage and spend",
+          "Low job failure rate",
+          "No evidence of technical blockers or disinterest"
         ],
         "questions_to_probe": [
-          "What is the current status of the deal and are there any roadblocks?",
-          "Has the customer provided any feedback or indications of their decision timeline?"
+          "What are the next steps for the economic buyer to engage with the sales process?",
+          "Are there any external blockers, such as power or data-center constraints, that could impact the deal timeline?"
         ],
-        "recommended_action": "Schedule a follow-up meeting with the customer to discuss the deal status and provide any necessary support to move the deal forward"
+        "recommended_action": "progress and schedule a meeting with the economic buyer to discuss the opportunity and address any potential concerns"
       },
       "evaluation": {
         "case_id": "DR-009",
@@ -402,11 +417,11 @@
       },
       "telemetry": {
         "model": "llama-3.3-70b-versatile",
-        "prompt_version": "deal_risk_v1",
-        "input_tokens": 444,
-        "output_tokens": 102,
-        "total_tokens": 546,
-        "latency_ms": 476.68,
+        "prompt_version": "deal_risk_v2",
+        "input_tokens": 1333,
+        "output_tokens": 127,
+        "total_tokens": 1460,
+        "latency_ms": 3915.66,
         "success": true,
         "error": null
       }
@@ -421,37 +436,39 @@
         "recommended_action": "investigate"
       },
       "actual": {
-        "risk_score": 60,
-        "risk_level": "high",
+        "risk_score": 30,
+        "risk_level": "medium",
         "signals": [
-          "deal_stale",
-          "no_recent_activity"
+          "The deal is 68 days old and has been in the current stage for 29 days, indicating potential stall.",
+          "There have been 25 days since the last activity, suggesting a possible lack of engagement.",
+          "Despite this, the economic buyer is engaged, which is a positive signal.",
+          "GPU usage and spend are both growing, which are strong indicators of interest and value."
         ],
         "questions_to_probe": [
-          "What are the current pain points or challenges that the customer is experiencing with our service?",
-          "Are there any changes in the customer's business priorities or budget that may be impacting the deal?",
-          "What is the customer's current timeline for making a decision on this deal?"
+          "What are the primary factors causing the delay in moving the deal forward?",
+          "Are there any technical or operational blockers that need to be addressed?",
+          "How does the current spend growth align with the buyer's expectations and ROI case?"
         ],
-        "recommended_action": "Schedule an urgent call with the economic buyer to re-engage and discuss potential roadblocks"
+        "recommended_action": "Investigate the reasons for the lack of recent activity and re-engage with the economic buyer to understand their current priorities and potential blockers."
       },
       "evaluation": {
         "case_id": "DR-010",
         "schema_valid": true,
-        "risk_level_correct": false,
+        "risk_level_correct": true,
         "score_within_range": true,
         "required_signals_present": false,
         "forbidden_claims_absent": true,
-        "recommended_action_correct": false,
-        "canonical_recommended_action": "monitor",
+        "recommended_action_correct": true,
+        "canonical_recommended_action": "investigate",
         "passed": false
       },
       "telemetry": {
         "model": "llama-3.3-70b-versatile",
-        "prompt_version": "deal_risk_v1",
-        "input_tokens": 458,
-        "output_tokens": 127,
-        "total_tokens": 585,
-        "latency_ms": 584.92,
+        "prompt_version": "deal_risk_v2",
+        "input_tokens": 1347,
+        "output_tokens": 197,
+        "total_tokens": 1544,
+        "latency_ms": 7263.74,
         "success": true,
         "error": null
       }
@@ -466,20 +483,22 @@
         "recommended_action": "requalify"
       },
       "actual": {
-        "risk_score": 85,
+        "risk_score": 80,
         "risk_level": "high",
         "signals": [
-          "deal_stale",
-          "no_recent_activity",
-          "usage_declining",
-          "job_failures"
+          "lack of recent activity for 17 days",
+          "declining usage over the last 30 days",
+          "unhealthy job status with 10 failed jobs out of 24",
+          "absence of economic buyer engagement",
+          "deal stall with 38 days in the current stage"
         ],
         "questions_to_probe": [
-          "Is the customer experiencing technical difficulties?",
-          "Are there any changes in the customer's business priorities?",
-          "Can we provide additional support or resources to help the customer succeed?"
+          "What are the reasons behind the decline in usage over the last 30 days?",
+          "Are there any technical issues causing the high job failure rate?",
+          "Is the economic buyer unavailable or uninterested in the deal?",
+          "What are the next steps to move the deal forward?"
         ],
-        "recommended_action": "Schedule a meeting with the customer to discuss their current challenges and provide a customized solution to address their needs"
+        "recommended_action": "Investigate the causes of the declining usage and job failures, and requalify the deal to assess the buyer's current needs and priorities"
       },
       "evaluation": {
         "case_id": "DR-011",
@@ -488,17 +507,17 @@
         "score_within_range": true,
         "required_signals_present": false,
         "forbidden_claims_absent": true,
-        "recommended_action_correct": false,
-        "canonical_recommended_action": "progress",
+        "recommended_action_correct": true,
+        "canonical_recommended_action": "requalify",
         "passed": false
       },
       "telemetry": {
         "model": "llama-3.3-70b-versatile",
-        "prompt_version": "deal_risk_v1",
-        "input_tokens": 467,
-        "output_tokens": 122,
-        "total_tokens": 589,
-        "latency_ms": 472.99,
+        "prompt_version": "deal_risk_v2",
+        "input_tokens": 1363,
+        "output_tokens": 188,
+        "total_tokens": 1551,
+        "latency_ms": 8098.12,
         "success": true,
         "error": null
       }
@@ -516,15 +535,16 @@
         "risk_score": 30,
         "risk_level": "medium",
         "signals": [
-          "deal_stale",
-          "economic_buyer_not_engaged"
+          "Economic buyer is not engaged despite the technical champion's engagement",
+          "Deal is 58 days old with 24 days in the current stage, indicating potential stall",
+          "Positive usage and spend growth trends"
         ],
         "questions_to_probe": [
-          "What is the current feedback from the technical champion?",
-          "What are the potential roadblocks to closing this deal?",
-          "Are there any concerns from the customer regarding the cost or value proposition?"
+          "What is the current status of the economic buyer's evaluation of our solution?",
+          "Are there any internal budget or procurement processes that are causing delays?",
+          "Can we schedule a meeting with the economic buyer to discuss the value proposition and address any concerns?"
         ],
-        "recommended_action": "Schedule a call with the technical champion and attempt to engage the economic buyer to discuss potential roadblocks and value proposition"
+        "recommended_action": "Escalate to ensure economic buyer engagement and re-qualify the opportunity to understand buyer motivations and potential roadblocks"
       },
       "evaluation": {
         "case_id": "DR-012",
@@ -534,16 +554,16 @@
         "required_signals_present": false,
         "forbidden_claims_absent": true,
         "recommended_action_correct": false,
-        "canonical_recommended_action": "progress",
+        "canonical_recommended_action": "requalify",
         "passed": false
       },
       "telemetry": {
         "model": "llama-3.3-70b-versatile",
-        "prompt_version": "deal_risk_v1",
-        "input_tokens": 462,
-        "output_tokens": 119,
-        "total_tokens": 581,
-        "latency_ms": 474.18,
+        "prompt_version": "deal_risk_v2",
+        "input_tokens": 1358,
+        "output_tokens": 162,
+        "total_tokens": 1520,
+        "latency_ms": 7177.82,
         "success": true,
         "error": null
       }
@@ -558,17 +578,19 @@
         "recommended_action": "escalate"
       },
       "actual": {
-        "risk_score": 25,
+        "risk_score": 40,
         "risk_level": "medium",
         "signals": [
-          "deal_stale",
-          "economic_buyer_not_engaged"
+          "The economic buyer is not engaged, indicating potential sponsorship risk",
+          "The prospect is actively building an internal alternative, posing a significant competitive risk",
+          "The deal has been in the current stage for 38 days, which may indicate stalled progress"
         ],
         "questions_to_probe": [
-          "What are the customer's current priorities and how does our solution align with them?",
-          "Are there any concerns or objections from the economic buyer that need to be addressed?"
+          "What are the key factors driving the internal build project, and how does it compare to our solution?",
+          "What are the economic buyer's priorities, and how can we ensure their engagement in the sales process?",
+          "What are the primary obstacles preventing the deal from moving forward, and how can we address them?"
         ],
-        "recommended_action": "Schedule a meeting with the customer to review the deal status and address any concerns, and invite the economic buyer to participate"
+        "recommended_action": "Re-engage with the technical champion to understand the internal build project's status and progress, while also attempting to involve the economic buyer in discussions to clarify their priorities and concerns."
       },
       "evaluation": {
         "case_id": "DR-013",
@@ -578,16 +600,16 @@
         "required_signals_present": false,
         "forbidden_claims_absent": true,
         "recommended_action_correct": false,
-        "canonical_recommended_action": "progress",
+        "canonical_recommended_action": "investigate",
         "passed": false
       },
       "telemetry": {
         "model": "llama-3.3-70b-versatile",
-        "prompt_version": "deal_risk_v1",
-        "input_tokens": 478,
-        "output_tokens": 115,
-        "total_tokens": 593,
-        "latency_ms": 402.62,
+        "prompt_version": "deal_risk_v2",
+        "input_tokens": 1382,
+        "output_tokens": 192,
+        "total_tokens": 1574,
+        "latency_ms": 7052.09,
         "success": true,
         "error": null
       }
@@ -602,35 +624,38 @@
         "recommended_action": "monitor"
       },
       "actual": {
-        "risk_score": 20,
-        "risk_level": "low",
+        "risk_score": 30,
+        "risk_level": "medium",
         "signals": [
-          "deal_stale"
+          "The facility is not power ready, which is an external blocker that could delay the deal",
+          "The deal has been in the current stage for 16 days, which may indicate slow progress",
+          "The usage and spend growth are stagnant, which could be a sign of limited adoption or interest"
         ],
         "questions_to_probe": [
-          "What is the status of the facility power readiness and how will it impact the deal?",
-          "Are there any concerns or issues from the economic buyer or technical champion that need to be addressed?"
+          "What is the current status of the facility power readiness and the planned ETA of 90 days",
+          "Are there any plans to increase usage and adoption in the near term",
+          "How does the economic buyer view the current stage of the deal and the potential ROI"
         ],
-        "recommended_action": "Schedule a meeting with the economic buyer and technical champion to review the deal status and address any concerns"
+        "recommended_action": "Investigate the facility power readiness and usage growth plans with the buyer to understand potential roadblocks and opportunities for growth"
       },
       "evaluation": {
         "case_id": "DR-014",
         "schema_valid": true,
-        "risk_level_correct": false,
-        "score_within_range": false,
+        "risk_level_correct": true,
+        "score_within_range": true,
         "required_signals_present": false,
         "forbidden_claims_absent": true,
         "recommended_action_correct": false,
-        "canonical_recommended_action": "progress",
+        "canonical_recommended_action": "investigate",
         "passed": false
       },
       "telemetry": {
         "model": "llama-3.3-70b-versatile",
-        "prompt_version": "deal_risk_v1",
-        "input_tokens": 479,
-        "output_tokens": 102,
-        "total_tokens": 581,
-        "latency_ms": 470.38,
+        "prompt_version": "deal_risk_v2",
+        "input_tokens": 1374,
+        "output_tokens": 181,
+        "total_tokens": 1555,
+        "latency_ms": 7164.43,
         "success": true,
         "error": null
       }
@@ -647,12 +672,17 @@
       "actual": {
         "risk_score": 0,
         "risk_level": "low",
-        "signals": [],
-        "questions_to_probe": [
-          "Is the customer's sovereignty requirement being met?",
-          "How will the air-gapped requirement be addressed in the solution?"
+        "signals": [
+          "The opportunity has a regulatory tailwind due to sovereignty and EU region requirements being met",
+          "There is a strong economic buyer engagement",
+          "Usage and spend are growing, indicating a healthy adoption trend",
+          "Low job failure rate suggests reliable infrastructure"
         ],
-        "recommended_action": "Schedule a call to discuss the customer's specific requirements and provide a customized solution that addresses their sovereignty and air-gapped needs."
+        "questions_to_probe": [
+          "What are the next steps for the economic buyer after the current stage?",
+          "Are there any potential roadblocks or concerns from the buyer's side that need to be addressed?"
+        ],
+        "recommended_action": "Progress the deal, focusing on reinforcing the value proposition and regulatory compliance fit, and schedule a follow-up meeting with the economic buyer to discuss next steps"
       },
       "evaluation": {
         "case_id": "DR-015",
@@ -667,11 +697,11 @@
       },
       "telemetry": {
         "model": "llama-3.3-70b-versatile",
-        "prompt_version": "deal_risk_v1",
-        "input_tokens": 471,
-        "output_tokens": 89,
-        "total_tokens": 560,
-        "latency_ms": 325.11,
+        "prompt_version": "deal_risk_v2",
+        "input_tokens": 1376,
+        "output_tokens": 160,
+        "total_tokens": 1536,
+        "latency_ms": 8489.56,
         "success": true,
         "error": null
       }
@@ -686,17 +716,18 @@
         "recommended_action": "protect_value"
       },
       "actual": {
-        "risk_score": 20,
+        "risk_score": 15,
         "risk_level": "low",
         "signals": [
-          "deal_stale"
+          "Economic buyer is engaged and ROI conversation has been completed, indicating a positive commercial signal",
+          "High price sensitivity is a potential risk, but the deal is still progressing with recent activity",
+          "Usage growth and spend growth are positive, with no significant job failures"
         ],
         "questions_to_probe": [
-          "What is the current evaluation status of the deal?",
-          "Are there any potential roadblocks or concerns from the economic buyer?",
-          "How does the high price sensitivity of the buyer impact the deal's progress?"
+          "What specific concerns is the buyer having about the price, and how can we address them?",
+          "Are there any external factors that could impact the deal timeline or decision-making process?"
         ],
-        "recommended_action": "Schedule a call with the economic buyer to discuss the deal's progress and address any potential concerns or roadblocks"
+        "recommended_action": "Progress the deal by addressing the buyer's price concerns and exploring potential solutions to mitigate the risk"
       },
       "evaluation": {
         "case_id": "DR-016",
@@ -711,11 +742,11 @@
       },
       "telemetry": {
         "model": "llama-3.3-70b-versatile",
-        "prompt_version": "deal_risk_v1",
-        "input_tokens": 482,
-        "output_tokens": 108,
-        "total_tokens": 590,
-        "latency_ms": 435.58,
+        "prompt_version": "deal_risk_v2",
+        "input_tokens": 1383,
+        "output_tokens": 153,
+        "total_tokens": 1536,
+        "latency_ms": 6075.65,
         "success": true,
         "error": null
       }
@@ -733,13 +764,16 @@
         "risk_score": 20,
         "risk_level": "low",
         "signals": [
-          "deal_stale"
+          "The deal is progressing with recent activity",
+          "Economic buyer is engaged",
+          "Usage and spend are growing",
+          "Customer concentration is high, posing financial fragility risk"
         ],
         "questions_to_probe": [
-          "What are the primary concerns of the economic buyer in this deal?",
-          "How does the 78% revenue dependency on this customer factor into the decision-making process?"
+          "What are the plans to diversify the customer base and mitigate concentration risk?",
+          "How does the growing usage and spend align with the buyer's business goals and expected ROI?"
         ],
-        "recommended_action": "Schedule a call with the economic buyer to address potential concerns and re-engage the deal"
+        "recommended_action": "Progress the deal while monitoring customer concentration risk and gathering more information on the buyer's business goals and expected ROI."
       },
       "evaluation": {
         "case_id": "DR-017",
@@ -754,11 +788,11 @@
       },
       "telemetry": {
         "model": "llama-3.3-70b-versatile",
-        "prompt_version": "deal_risk_v1",
-        "input_tokens": 475,
-        "output_tokens": 99,
-        "total_tokens": 574,
-        "latency_ms": 471.32,
+        "prompt_version": "deal_risk_v2",
+        "input_tokens": 1376,
+        "output_tokens": 138,
+        "total_tokens": 1514,
+        "latency_ms": 7163.66,
         "success": true,
         "error": null
       }

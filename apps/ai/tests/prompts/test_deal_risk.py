@@ -1,34 +1,40 @@
-import pytest
-
 from apps.ai.prompts.deal_risk import (
     DEAL_RISK_PROMPT_VERSION,
+    SYSTEM_PROMPT,
     build_deal_risk_prompt,
 )
 
 
 def test_deal_risk_prompt_has_version():
-    assert DEAL_RISK_PROMPT_VERSION == "deal_risk_v1"
+    assert DEAL_RISK_PROMPT_VERSION == "deal_risk_v2"
 
 
-def test_build_deal_risk_prompt_contains_evidence():
-    prompt = build_deal_risk_prompt(
-        evidence={
-            "deal_age_days": 76,
-            "stage_age_days": 46,
-            "days_since_last_activity": 15,
-            "usage_growth_7d_percent": -35.0,
-            "failed_jobs_30d": 8,
-            "spend_growth_30d_percent": -30.0,
-        }
+def test_deal_risk_prompt_rejects_empty_evidence():
+    try:
+        build_deal_risk_prompt({})
+    except ValueError:
+        return
+
+    raise AssertionError(
+        "Expected ValueError for empty evidence"
     )
 
-    assert "76" in prompt
-    assert "46" in prompt
-    assert "-35.0" in prompt
-    assert "8" in prompt
-    assert "-30.0" in prompt
 
+def test_deal_risk_prompt_contains_evidence():
+    evidence = {
+        "deal": {
+            "id": 456,
+            "title": "Acme H100 Expansion",
+        },
+        "crm": {
+            "economic_buyer_engaged": False,
+            "internal_build_project": True,
+        },
+    }
 
-def test_build_deal_risk_prompt_requires_evidence():
-    with pytest.raises(ValueError):
-        build_deal_risk_prompt(evidence={})
+    prompt = build_deal_risk_prompt(evidence)
+
+    assert "Acme H100 Expansion" in prompt
+    assert "economic_buyer_engaged" in prompt
+    assert "internal_build_project" in prompt
+    assert "recommended_action" in prompt
