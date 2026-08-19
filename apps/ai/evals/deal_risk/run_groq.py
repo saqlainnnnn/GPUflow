@@ -6,9 +6,7 @@ from typing import Any
 from groq import AsyncGroq
 
 from apps.ai.agents.deal_risk import DealRiskAgent
-from apps.ai.core.llm import LLMInvocationTelemetry, LLMService
-from apps.ai.deal_risk.scoring import DealRiskScorer
-from apps.ai.deal_risk.signals import DealRiskSignalEngine
+from apps.ai.core.llm import LLMService
 from apps.ai.evals.deal_risk.dataset import (
     load_deal_risk_eval_dataset,
 )
@@ -89,11 +87,17 @@ async def main() -> None:
         telemetry=telemetry,
     )
 
-    signal_engine = DealRiskSignalEngine()
-    scorer = DealRiskScorer()
+    signal_engine = __import__(
+        "apps.ai.deal_risk.signals",
+        fromlist=["DealRiskSignalEngine"],
+    ).DealRiskSignalEngine()
 
-    evaluations = []
-    case_results = []
+    scorer = __import__(
+        "apps.ai.deal_risk.scoring",
+        fromlist=["DealRiskScorer"],
+    ).DealRiskScorer()
+
+    case_results: list[dict[str, Any]] = []
 
     for index, case in enumerate(
         dataset.cases,
@@ -131,10 +135,6 @@ async def main() -> None:
                 result,
             )
 
-            evaluations.append(
-                evaluation,
-            )
-
             event = telemetry.events[-1]
 
             case_result = {
@@ -153,12 +153,16 @@ async def main() -> None:
                 "telemetry": event,
             }
 
-            case_results.append(case_result)
+            case_results.append(
+                case_result,
+            )
 
             print(
                 f"  risk={result.risk_level} "
                 f"score={result.risk_score} "
-                f"action={result.recommended_action} "
+                f"quality={evaluation.total_score} "
+                f"rating={evaluation.rating} "
+                f"action={evaluation.canonical_recommended_action} "
                 f"passed={evaluation.passed}",
                 flush=True,
             )
@@ -178,23 +182,93 @@ async def main() -> None:
                 flush=True,
             )
 
-    total = len(case_results)
-    executed = sum(
-        1
+    executed_results = [
+        result
         for result in case_results
         if result.get("evaluation") is not None
+    ]
+
+    evaluations = [
+        result["evaluation"]
+        for result in executed_results
+    ]
+
+    total_cases = len(case_results)
+    executed_cases = len(executed_results)
+
+    average_quality = (
+        sum(
+            evaluation["total_score"]
+            for evaluation in evaluations
+        )
+        / executed_cases
+        if executed_cases
+        else 0.0
     )
 
-    passed = sum(
-        1
-        for result in case_results
-        if result.get(
-            "evaluation",
-            {},
-        ).get(
-            "passed",
-            False,
+    risk_level_accuracy = (
+        sum(
+            1
+            for evaluation in evaluations
+            if evaluation["risk_level_correct"]
         )
+        / executed_cases
+        * 100
+        if executed_cases
+        else 0.0
+    )
+
+    score_range_accuracy = (
+        sum(
+            1
+            for evaluation in evaluations
+            if evaluation["score_within_range"]
+        )
+        / executed_cases
+        * 100
+        if executed_cases
+        else 0.0
+    )
+
+    action_accuracy = (
+        sum(
+            1
+            for evaluation in evaluations
+            if evaluation["recommended_action_correct"]
+        )
+        / executed_cases
+        * 100
+        if executed_cases
+        else 0.0
+    )
+
+    grounding_rate = (
+        sum(
+            evaluation["evidence_grounding_points"] / 20.0
+            for evaluation in evaluations
+        )
+        / executed_cases
+        * 100
+        if executed_cases
+        else 0.0
+    )
+
+    unsupported_claim_rate = (
+        sum(
+            1
+            for evaluation in evaluations
+            if evaluation["forbidden_claims_absent"]
+        )
+        / executed_cases
+        * 100
+        if executed_cases
+        else 0.0
+    )
+
+    passed_cases = sum(
+        1
+        for evaluation in evaluations
+        if evaluation["passed"]
     )
 
     successful_telemetry = [
@@ -225,16 +299,36 @@ async def main() -> None:
 
     report = {
         "model": settings.groq_model,
-        "total_cases": total,
-        "executed_cases": executed,
-        "passed_cases": passed,
-        "pass_rate": (
-            round(
-                passed / executed * 100,
-                2,
-            )
-            if executed
-            else 0.0
+        "total_cases": total_cases,
+        "executed_cases": executed_cases,
+        "passed_cases": passed_cases,
+        "pass_rate": round(
+            passed_cases / executed_cases * 100,
+            2,
+        ) if executed_cases else 0.0,
+        "average_quality_score": round(
+            average_quality,
+            2,
+        ),
+        "risk_level_accuracy": round(
+            risk_level_accuracy,
+            2,
+        ),
+        "score_range_accuracy": round(
+            score_range_accuracy,
+            2,
+        ),
+        "recommended_action_accuracy": round(
+            action_accuracy,
+            2,
+        ),
+        "evidence_grounding_rate": round(
+            grounding_rate,
+            2,
+        ),
+        "unsupported_claim_rate": round(
+            unsupported_claim_rate,
+            2,
         ),
         "average_latency_ms": round(
             average_latency,
@@ -260,27 +354,51 @@ async def main() -> None:
     print()
     print("Deal Risk Groq Evaluation")
     print("=========================")
-    print(f"Model:              {settings.groq_model}")
-    print(f"Cases:              {total}")
-    print(f"Executed:           {executed}")
-    print(f"Passed:             {passed}")
+    print(f"Model:                  {settings.groq_model}")
+    print(f"Cases:                  {total_cases}")
+    print(f"Executed:               {executed_cases}")
+    print(f"Passed:                 {passed_cases}")
     print(
-        f"Pass rate:          {report['pass_rate']}%"
+        f"Pass rate:              {report['pass_rate']}%"
     )
     print(
-        f"Avg latency:        "
+        f"Average quality:        "
+        f"{report['average_quality_score']}"
+    )
+    print(
+        f"Risk accuracy:          "
+        f"{report['risk_level_accuracy']}%"
+    )
+    print(
+        f"Score accuracy:         "
+        f"{report['score_range_accuracy']}%"
+    )
+    print(
+        f"Action accuracy:        "
+        f"{report['recommended_action_accuracy']}%"
+    )
+    print(
+        f"Evidence grounding:    "
+        f"{report['evidence_grounding_rate']}%"
+    )
+    print(
+        f"Unsupported claims:    "
+        f"{report['unsupported_claim_rate']}%"
+    )
+    print(
+        f"Average latency:        "
         f"{report['average_latency_ms']} ms"
     )
     print(
-        f"Input tokens:       {total_input_tokens}"
+        f"Input tokens:           "
+        f"{total_input_tokens}"
     )
     print(
-        f"Output tokens:      {total_output_tokens}"
+        f"Output tokens:          "
+        f"{total_output_tokens}"
     )
     print()
-    print(
-        f"Report: {output}"
-    )
+    print(f"Report: {output}")
 
 
 if __name__ == "__main__":

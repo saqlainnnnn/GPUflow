@@ -2,6 +2,7 @@ from apps.gpuaas.app.models.allocation import GPUAllocation
 from apps.gpuaas.app.models.base import Base
 from apps.gpuaas.app.models.capacity import GPUCapacity
 from apps.gpuaas.app.models.customer import Customer
+from apps.gpuaas.app.models.customer_identity import CustomerIdentity
 from apps.gpuaas.app.models.invoice import Invoice
 from apps.gpuaas.app.models.invoice_line_item import InvoiceLineItem
 from apps.gpuaas.app.models.job import GPUJob
@@ -12,6 +13,7 @@ from apps.gpuaas.app.models.xero_connection import XeroConnection
 __all__ = [
     "Base",
     "Customer",
+    "CustomerIdentity",
     "GPUAllocation",
     "GPUCapacity",
     "GPUJob",

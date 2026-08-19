@@ -47,12 +47,17 @@ class DealRiskWriteback:
         deal_id: int,
         result: DealRiskResult,
     ) -> None:
+        signals_text = ", ".join(
+            signal.name
+            for signal in result.signals
+        )
+
         await self.pipedrive_client.update_deal(
             deal_id,
             fields={
                 self.risk_score_field: result.risk_score,
                 self.risk_level_field: result.risk_level,
-                self.signals_field: ", ".join(result.signals),
+                self.signals_field: signals_text,
                 self.recommendation_field: result.recommended_action,
             },
         )

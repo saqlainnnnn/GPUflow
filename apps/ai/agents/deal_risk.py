@@ -3,17 +3,36 @@ from datetime import date
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import ValidationError
 
-from apps.ai.core.llm import LLMRequest, LLMService
-from apps.ai.deal_risk.evidence import DealRiskEvidenceCollector
-from apps.ai.deal_risk.schemas import DealRiskResult
-from apps.ai.deal_risk.scoring import DealRiskScorer
+from apps.ai.core.llm import (
+    LLMRequest,
+    LLMService,
+)
+from apps.ai.deal_risk.action_policy import (
+    derive_recommended_action,
+)
+from apps.ai.deal_risk.evidence import (
+    DealRiskEvidenceCollector,
+)
+from apps.ai.deal_risk.risk_guardrails import (
+    apply_risk_floor,
+)
+from apps.ai.deal_risk.schemas import (
+    DealRiskLLMOutput,
+    DealRiskLLMResult,
+    DealRiskResult,
+)
+from apps.ai.deal_risk.scoring import (
+    DealRiskScorer,
+)
 from apps.ai.deal_risk.signals import (
     DealRiskSignalEngine,
     DealRiskSignalInput,
 )
-from apps.ai.deal_risk.writeback import DealRiskWriteback
+from apps.ai.deal_risk.writeback import (
+    DealRiskWriteback,
+)
 from apps.ai.prompts.deal_risk import (
     DEAL_RISK_PROMPT_VERSION,
     SYSTEM_PROMPT,
@@ -78,29 +97,49 @@ class DealRiskAgent:
             today=today,
         )
 
-        signals = self.signal_engine.evaluate(
+        deterministic_signals = self.signal_engine.evaluate(
             signal_input,
         )
 
-        risk_score = self.scorer.score(
-            signals.signals,
+        deterministic_score = self.scorer.score(
+            deterministic_signals.signals,
+        )
+
+        deterministic_risk_level = getattr(
+            deterministic_score.level,
+            "value",
+            deterministic_score.level,
         )
 
         prompt_evidence = {
             **evidence,
             "deterministic_signals": {
-                "deal_age_days": signals.deal_age_days,
-                "stage_age_days": signals.stage_age_days,
-                "days_since_last_activity": (
-                    signals.days_since_last_activity
+                "deal_age_days": (
+                    deterministic_signals.deal_age_days
                 ),
-                "usage_declining": signals.usage_declining,
-                "jobs_unhealthy": signals.jobs_unhealthy,
-                "spend_declining": signals.spend_declining,
-                "signals": signals.signals,
+                "stage_age_days": (
+                    deterministic_signals.stage_age_days
+                ),
+                "days_since_last_activity": (
+                    deterministic_signals.days_since_last_activity
+                ),
+                "usage_declining": (
+                    deterministic_signals.usage_declining
+                ),
+                "jobs_unhealthy": (
+                    deterministic_signals.jobs_unhealthy
+                ),
+                "spend_declining": (
+                    deterministic_signals.spend_declining
+                ),
+                "signals": deterministic_signals.signals,
             },
-            "deterministic_risk_score": risk_score.score,
-            "deterministic_risk_level": risk_score.level,
+            "deterministic_risk_score": (
+                deterministic_score.score
+            ),
+            "deterministic_risk_level": str(
+                deterministic_risk_level
+            ),
         }
 
         prompt = build_deal_risk_prompt(
@@ -115,8 +154,46 @@ class DealRiskAgent:
             )
         )
 
-        result = self._parse_response(
+        llm_result = self._parse_llm_response(
             response.content,
+        )
+
+        canonical_signals = list(
+            deterministic_signals.signals,
+        )
+
+        final_score, final_level = apply_risk_floor(
+            risk_score=llm_result.risk_score,
+            risk_level=llm_result.risk_level,
+            signals=canonical_signals,
+        )
+
+        recommended_action = derive_recommended_action(
+            risk_level=final_level,
+            signals=canonical_signals,
+        )
+
+        # The returned result exposes the canonical deterministic
+        # signals because those are the actual source of truth for
+        # the business decision and evaluation.
+        result = DealRiskResult(
+            risk_score=final_score,
+            risk_level=final_level,
+            signals=[
+                {
+                    "name": signal,
+                    "severity": "medium",
+                    "evidence": signal.replace(
+                        "_",
+                        " ",
+                    ),
+                }
+                for signal in canonical_signals
+            ],
+            questions_to_probe=(
+                llm_result.questions_to_probe
+            ),
+            recommended_action=recommended_action,
         )
 
         if writeback:
@@ -142,22 +219,27 @@ class DealRiskAgent:
             "deal",
             {},
         )
+
         crm = evidence.get(
             "crm",
             {},
         )
+
         usage = evidence.get(
             "usage",
             {},
         )
+
         usage_summary = usage.get(
             "summary",
             {},
         )
+
         jobs = evidence.get(
             "jobs",
             {},
         )
+
         billing = evidence.get(
             "billing",
             {},
@@ -259,21 +341,29 @@ class DealRiskAgent:
         )
 
     @staticmethod
-    def _parse_response(
+    def _parse_llm_response(
         content: str,
-    ) -> DealRiskResult:
+    ) -> DealRiskLLMResult:
         cleaned = content.strip()
 
         if cleaned.startswith("```"):
             lines = cleaned.splitlines()
 
-            if lines and lines[0].strip().startswith("```"):
+            if (
+                lines
+                and lines[0].strip().startswith("```")
+            ):
                 lines = lines[1:]
 
-            if lines and lines[-1].strip() == "```":
+            if (
+                lines
+                and lines[-1].strip() == "```"
+            ):
                 lines = lines[:-1]
 
-            cleaned = "\n".join(lines).strip()
+            cleaned = "\n".join(
+                lines,
+            ).strip()
 
         try:
             payload = json.loads(
@@ -284,6 +374,39 @@ class DealRiskAgent:
                 "Deal risk LLM response was not valid JSON",
             ) from exc
 
-        return DealRiskResult.model_validate(
-            payload,
+        if not isinstance(payload, dict):
+            raise ValueError(
+                "Deal risk LLM response must be a JSON object",
+            )
+
+        payload = dict(payload)
+
+        payload.pop(
+            "recommended_action",
+            None,
+        )
+
+        payload.pop(
+            "determined_risk_score",
+            None,
+        )
+
+        payload.pop(
+            "determined_risk_level",
+            None,
+        )
+
+        try:
+            llm_output = DealRiskLLMOutput.model_validate(
+                payload,
+            )
+        except ValidationError as exc:
+            raise ValueError(
+                "Deal risk LLM response did not match "
+                "the expected schema: "
+                f"{cleaned}",
+            ) from exc
+
+        return DealRiskLLMResult.from_llm_output(
+            llm_output,
         )

@@ -124,6 +124,34 @@ class XeroClient:
 
         return contacts[0]
 
+    async def get_contact(
+        self,
+        contact_id: str,
+    ) -> dict[str, Any]:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            response = await client.get(
+                f"{XERO_API_BASE}/Contacts/{contact_id}",
+                headers=self._headers(),
+            )
+
+        if not response.is_success:
+            raise XeroAPIError(
+                response.status_code,
+                response.text,
+            )
+
+        contacts = response.json().get(
+            "Contacts",
+            [],
+        )
+
+        if not contacts:
+            raise RuntimeError(
+                "Xero contact response contained no contacts"
+            )
+
+        return contacts[0]
+
     async def get_organisation(
         self,
     ) -> dict[str, Any]:

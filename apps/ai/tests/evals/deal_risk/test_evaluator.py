@@ -4,6 +4,7 @@ from apps.ai.evals.deal_risk.cases import (
     DealRiskEvalExpected,
 )
 from apps.ai.evals.deal_risk.evaluator import (
+    action_points,
     canonicalize_action,
     evaluate_deal_risk_result,
 )
@@ -41,31 +42,41 @@ def make_result(
     *,
     risk_score: int = 15,
     risk_level: str = "low",
-    signals: list[str] | None = None,
+    signals=None,
+    questions=None,
     recommended_action: str = "progress",
 ) -> DealRiskResult:
     if signals is None:
-        signals = ["usage_growth"]
+        signals = [
+            {
+                "name": "usage_growth",
+                "severity": "medium",
+                "evidence": "usage growth",
+            },
+        ]
+
+    if questions is None:
+        questions = []
 
     return DealRiskResult(
         risk_score=risk_score,
         risk_level=risk_level,
         signals=signals,
-        questions_to_probe=[],
+        questions_to_probe=questions,
         recommended_action=recommended_action,
     )
 
 
-def test_canonicalizes_progress_actions():
+def test_canonicalizes_progress_action():
     assert (
         canonicalize_action(
-            "Schedule a follow-up meeting",
+            "Progress the deal by scheduling a follow-up meeting",
         )
         == "progress"
     )
 
 
-def test_canonicalizes_monitor_actions():
+def test_canonicalizes_monitor_action():
     assert (
         canonicalize_action(
             "Keep the opportunity warm",
@@ -74,16 +85,16 @@ def test_canonicalizes_monitor_actions():
     )
 
 
-def test_canonicalizes_investigate_actions():
+def test_canonicalizes_investigate_action():
     assert (
         canonicalize_action(
-            "Discuss concerns and establish a clear path forward",
+            "Investigate the cause of the inactivity",
         )
         == "investigate"
     )
 
 
-def test_canonicalizes_requalify_actions():
+def test_canonicalizes_requalify_action():
     assert (
         canonicalize_action(
             "Re-qualify the opportunity",
@@ -92,7 +103,7 @@ def test_canonicalizes_requalify_actions():
     )
 
 
-def test_canonicalizes_escalate_actions():
+def test_canonicalizes_escalate_action():
     assert (
         canonicalize_action(
             "Escalate to the account executive",
@@ -101,7 +112,7 @@ def test_canonicalizes_escalate_actions():
     )
 
 
-def test_canonicalizes_protect_value_actions():
+def test_canonicalizes_protect_value_action():
     assert (
         canonicalize_action(
             "Address pricing and defend ROI",
@@ -110,12 +121,84 @@ def test_canonicalizes_protect_value_actions():
     )
 
 
-def test_evaluator_accepts_natural_language_progress_action():
+def test_canonicalizes_qualify_action():
+    assert (
+        canonicalize_action(
+            "Qualify the customer's financial position",
+        )
+        == "qualify"
+    )
+
+
+def test_exact_action_gets_full_points():
+    assert (
+        action_points(
+            "investigate",
+            "investigate",
+        )
+        == 20.0
+    )
+
+
+def test_adjacent_action_gets_partial_points():
+    assert (
+        action_points(
+            "investigate",
+            "requalify",
+        )
+        == 12.0
+    )
+
+
+def test_broad_action_gets_lower_partial_points():
+    assert (
+        action_points(
+            "investigate",
+            "progress",
+        )
+        == 8.0
+    )
+
+
+def test_incompatible_action_gets_zero_points():
+    assert (
+        action_points(
+            "protect_value",
+            "escalate",
+        )
+        == 0.0
+    )
+
+
+def test_fully_correct_result_scores_excellent():
     case = make_case()
 
     result = make_result(
+        risk_score=15,
+        risk_level="low",
+        recommended_action="Progress the deal",
+    )
+
+    evaluation = evaluate_deal_risk_result(
+        case,
+        result,
+    )
+
+    assert evaluation.total_score == 100.0
+    assert evaluation.rating == "excellent"
+    assert evaluation.passed is True
+
+
+def test_adjacent_action_still_scores_well():
+    case = make_case(
+        action="investigate",
+    )
+
+    result = make_result(
+        risk_score=15,
+        risk_level="low",
         recommended_action=(
-            "Schedule a call to discuss the customer's progress"
+            "Re-qualify the opportunity"
         ),
     )
 
@@ -124,12 +207,14 @@ def test_evaluator_accepts_natural_language_progress_action():
         result,
     )
 
-    assert evaluation.recommended_action_correct is True
-    assert evaluation.canonical_recommended_action == "progress"
+    assert evaluation.recommended_action_correct is False
+    assert evaluation.recommended_action_points == 12.0
+    assert evaluation.total_score == 92.0
+    assert evaluation.rating == "excellent"
     assert evaluation.passed is True
 
 
-def test_evaluator_rejects_wrong_risk_level():
+def test_wrong_risk_level_still_matters():
     case = make_case()
 
     result = make_result(
@@ -141,11 +226,13 @@ def test_evaluator_rejects_wrong_risk_level():
         result,
     )
 
-    assert evaluation.risk_level_correct is False
+    assert evaluation.risk_level_points == 0.0
+    assert evaluation.total_score == 70.0
+    assert evaluation.rating == "acceptable"
     assert evaluation.passed is False
 
 
-def test_evaluator_rejects_score_outside_expected_range():
+def test_score_range_is_weighted():
     case = make_case()
 
     result = make_result(
@@ -157,11 +244,51 @@ def test_evaluator_rejects_score_outside_expected_range():
         result,
     )
 
-    assert evaluation.score_within_range is False
-    assert evaluation.passed is False
+    assert evaluation.score_range_points == 0.0
+    assert evaluation.total_score == 80.0
+    assert evaluation.rating == "good"
+    assert evaluation.passed is True
 
 
-def test_evaluator_requires_expected_signals():
+def test_action_is_semantic_not_exact_string():
+    case = make_case(
+        action="progress",
+    )
+
+    result = make_result(
+        recommended_action=(
+            "Schedule a call with the economic buyer "
+            "to review the deal and move forward"
+        ),
+    )
+
+    evaluation = evaluate_deal_risk_result(
+        case,
+        result,
+    )
+
+    assert evaluation.recommended_action_correct is True
+    assert evaluation.recommended_action_points == 20.0
+    assert evaluation.canonical_recommended_action == "progress"
+
+
+def test_forbidden_claims_are_still_penalized():
+    case = make_case()
+
+    result = make_result(
+        recommended_action="The deal is lost",
+    )
+
+    evaluation = evaluate_deal_risk_result(
+        case,
+        result,
+    )
+
+    assert evaluation.forbidden_claims_absent is False
+    assert evaluation.unsupported_claim_points == 0.0
+
+
+def test_missing_signal_reduces_signal_coverage():
     case = make_case()
 
     result = make_result(
@@ -174,20 +301,4 @@ def test_evaluator_requires_expected_signals():
     )
 
     assert evaluation.required_signals_present is False
-    assert evaluation.passed is False
-
-
-def test_evaluator_detects_forbidden_conclusions():
-    case = make_case()
-
-    result = make_result(
-        recommended_action="deal is lost",
-    )
-
-    evaluation = evaluate_deal_risk_result(
-        case,
-        result,
-    )
-
-    assert evaluation.forbidden_claims_absent is False
-    assert evaluation.passed is False
+    assert evaluation.signal_coverage_points == 0.0

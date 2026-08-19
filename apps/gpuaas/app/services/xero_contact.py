@@ -9,6 +9,12 @@ from apps.gpuaas.app.integrations.xero.token_manager import (
 from apps.gpuaas.app.repositories.customer import (
     CustomerRepository,
 )
+from apps.gpuaas.app.repositories.customer_identity import (
+    CustomerIdentityRepository,
+)
+from apps.gpuaas.app.services.customer_identity import (
+    CustomerIdentityService,
+)
 from apps.gpuaas.app.services.xero_connection import (
     XeroConnectionService,
 )
@@ -22,6 +28,10 @@ class XeroContactService:
         self.session = session
         self.customers = CustomerRepository(session)
         self.connections = XeroConnectionService(session)
+
+        self.identities = CustomerIdentityService(
+            CustomerIdentityRepository(session)
+        )
 
     async def get_or_create_contact(
         self,
@@ -38,17 +48,30 @@ class XeroContactService:
         )
 
         if connection.xero_contact_id:
-            return connection.xero_contact_id
+            contact_id = connection.xero_contact_id
+
+            await self.identities.link_identity(
+                customer_id=customer_id,
+                source="xero",
+                entity_type="contact",
+                external_id=contact_id,
+            )
+
+            return contact_id
 
         client = XeroClient(
             access_token=connection.access_token,
             tenant_id=connection.tenant_id,
         )
 
-        contact = await client.find_contact_by_email(customer.email)
+        contact = await client.find_contact_by_email(
+            customer.email
+        )
 
         if contact is None:
-            contact = await client.find_contact_by_name(customer.company_name)
+            contact = await client.find_contact_by_name(
+                customer.company_name
+            )
 
         if contact is None:
             result = await client.create_contact(
@@ -62,18 +85,29 @@ class XeroContactService:
             )
 
             if not contacts:
-                raise RuntimeError("Xero contact creation returned no contact")
+                raise RuntimeError(
+                    "Xero contact creation returned no contact"
+                )
 
             contact = contacts[0]
 
         contact_id = contact.get("ContactID")
 
         if not contact_id:
-            raise RuntimeError("Xero contact response missing ContactID")
+            raise RuntimeError(
+                "Xero contact response missing ContactID"
+            )
 
         await self.connections.set_contact_id(
             customer_id,
             contact_id,
+        )
+
+        await self.identities.link_identity(
+            customer_id=customer_id,
+            source="xero",
+            entity_type="contact",
+            external_id=contact_id,
         )
 
         return contact_id

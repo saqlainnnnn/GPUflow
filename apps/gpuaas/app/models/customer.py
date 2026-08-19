@@ -12,6 +12,7 @@ from apps.gpuaas.app.models.base import (
 if TYPE_CHECKING:
     from apps.gpuaas.app.models.allocation import GPUAllocation
     from apps.gpuaas.app.models.job import GPUJob
+    from apps.gpuaas.app.models.customer_identity import CustomerIdentity
 
 
 class Customer(UUIDPrimaryKeyMixin, TimestampMixin, Base):
@@ -53,6 +54,11 @@ class Customer(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
 
     jobs: Mapped[list["GPUJob"]] = relationship(
+        back_populates="customer",
+        cascade="all, delete-orphan",
+    )
+
+    identities: Mapped[list["CustomerIdentity"]] = relationship(
         back_populates="customer",
         cascade="all, delete-orphan",
     )
