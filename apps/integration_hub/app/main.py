@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 
 from apps.integration_hub.app.api.routes.events import router as events_router
+from apps.integration_hub.app.api.routes.health import router as health_router
 from apps.integration_hub.app.api.routes.pipedrive import (
     router as pipedrive_router,
 )
@@ -13,6 +14,11 @@ app = FastAPI(
 
 app.include_router(
     events_router,
+    prefix="/api/v1",
+)
+
+app.include_router(
+    health_router,
     prefix="/api/v1",
 )
 

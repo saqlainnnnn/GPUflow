@@ -59,3 +59,40 @@ class EventRepository:
 
         await self.session.flush()
         return event
+
+    async def get_oldest_unprocessed(
+        self,
+    ) -> IntegrationEvent | None:
+        result = await self.session.execute(
+            select(IntegrationEvent)
+            .where(
+                IntegrationEvent.status != "processed"
+            )
+            .order_by(
+                IntegrationEvent.occurred_at.asc()
+            )
+            .limit(1)
+        )
+
+        return result.scalar_one_or_none()
+
+    async def get_processed_events(
+        self,
+    ) -> list[IntegrationEvent]:
+        result = await self.session.execute(
+            select(IntegrationEvent)
+            .where(
+                IntegrationEvent.status == "processed"
+            )
+        )
+
+        return list(result.scalars().all())
+
+    async def get_all_events(
+        self,
+    ) -> list[IntegrationEvent]:
+        result = await self.session.execute(
+            select(IntegrationEvent)
+        )
+
+        return list(result.scalars().all())

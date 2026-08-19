@@ -35,6 +35,12 @@ from apps.gpuaas.app.services.customer_reconciliation_factory import (
 from apps.gpuaas.app.repositories.customer_data_quality import (
     CustomerDataQualityRepository,
 )
+from apps.gpuaas.app.repositories.kyb_audit import (
+    KYBAuditRepository,
+)
+from apps.gpuaas.app.services.kyb_audit import (
+    KYBAuditService,
+)
 from apps.gpuaas.app.repositories.customer import (
     CustomerRepository,
 )
@@ -46,6 +52,9 @@ from apps.gpuaas.app.schemas.customer_summary import (
 )
 from apps.gpuaas.app.schemas.customer_reconciliation_run import (
     CustomerReconciliationRunResponse,
+)
+from apps.gpuaas.app.schemas.kyb import (
+    KYBReviewRequest,
 )
 from apps.gpuaas.app.services.customer import (
     CustomerAlreadyExistsError,
@@ -77,7 +86,14 @@ async def create_customer(
     data: CustomerCreate,
     session: AsyncSession = Depends(get_db),
 ) -> CustomerResponse:
-    service = CustomerService(session)
+    kyb_audit = KYBAuditService(
+        repository=KYBAuditRepository(session),
+    )
+
+    service = CustomerService(
+        session,
+        kyb_audit=kyb_audit,
+    )
 
     try:
         customer = await service.create_customer(data)
@@ -344,3 +360,34 @@ async def trigger_customer_reconciliation_run(
     return CustomerReconciliationRunResponse.model_validate(
         run
     )
+
+
+@router.post(
+    "/{customer_id}/kyb/review",
+    response_model=CustomerResponse,
+)
+async def review_customer_kyb(
+    customer_id: UUID,
+    data: KYBReviewRequest,
+    session: AsyncSession = Depends(get_db),
+) -> CustomerResponse:
+    service = CustomerService(session)
+
+    try:
+        customer = await service.review_kyb(
+            customer_id=customer_id,
+            decision=data.decision,
+            reviewer=data.reviewer,
+        )
+    except CustomerNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+    return CustomerResponse.model_validate(customer)

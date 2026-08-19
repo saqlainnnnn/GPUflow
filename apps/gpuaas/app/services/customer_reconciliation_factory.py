@@ -9,6 +9,9 @@ from apps.gpuaas.app.repositories.customer import (
 from apps.gpuaas.app.repositories.customer_data_quality import (
     CustomerDataQualityRepository,
 )
+from apps.gpuaas.app.repositories.customer_data_quality_audit import (
+    CustomerDataQualityAuditRepository,
+)
 from apps.gpuaas.app.repositories.customer_identity import (
     CustomerIdentityRepository,
 )
@@ -17,6 +20,9 @@ from apps.gpuaas.app.repositories.customer_reconciliation_run import (
 )
 from apps.gpuaas.app.services.customer_data_quality_persistence import (
     CustomerDataQualityPersistenceService,
+)
+from apps.gpuaas.app.services.customer_conflict_resolution import (
+    CustomerConflictResolutionService,
 )
 from apps.gpuaas.app.services.customer_field_ownership_provider import (
     CustomerFieldOwnershipProvider,
@@ -87,9 +93,20 @@ class CustomerReconciliationFactory:
             )
         )
 
+        audit_repository = CustomerDataQualityAuditRepository(
+            self.session
+        )
+
+        conflict_resolution = (
+            CustomerConflictResolutionService(
+                audit_repository=audit_repository,
+            )
+        )
+
         runner = CustomerReconciliationRunner(
             reconciler=reconciler,
             persistence=persistence,
+            conflict_resolution=conflict_resolution,
         )
 
         ownership_policy = (

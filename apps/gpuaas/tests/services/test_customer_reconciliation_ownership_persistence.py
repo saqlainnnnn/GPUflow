@@ -150,3 +150,78 @@ async def test_reconcile_without_policy_preserves_original_fields():
         persisted_reconciliation.fields["email"]
         is original_field
     )
+
+
+@pytest.mark.asyncio
+async def test_reconcile_and_persist_resolves_mismatched_authoritative_field():
+    runner, reconciler, persistence = build_runner()
+
+    customer_id = uuid4()
+
+    field = FieldReconciliation(
+        field="company_name",
+        status=FieldReconciliationStatus.MISMATCH,
+        canonical_value="Acme AI",
+        source_value="Acme Compute",
+    )
+
+    reconciliation = CustomerSourceReconciliation(
+        source="pipedrive",
+        entity_type="organization",
+        status=CustomerReconciliationStatus.MISMATCH,
+        mismatches=["company_name"],
+        missing=[],
+        fields={
+            "company_name": field,
+        },
+    )
+
+    reconciler.reconcile_identity.return_value = (
+        reconciliation
+    )
+
+    conflict_resolution = AsyncMock()
+
+    resolution = MagicMock()
+    resolution.value = "Acme Compute"
+
+    conflict_resolution.resolve.return_value = (
+        resolution
+    )
+
+    persisted = MagicMock()
+    persistence.persist.return_value = persisted
+
+    runner = CustomerReconciliationRunner(
+        reconciler=reconciler,
+        persistence=persistence,
+        conflict_resolution=conflict_resolution,
+    )
+
+    policy = build_policy()
+
+    result, record = await runner.reconcile_and_persist(
+        customer_id=customer_id,
+        source="pipedrive",
+        entity_type="organization",
+        external_id="12345",
+        source_record={
+            "company_name": "Acme Compute",
+        },
+        adapter=MagicMock(),
+        ownership_policy=policy,
+    )
+
+    assert result is reconciliation
+    assert record is persisted
+
+    conflict_resolution.resolve.assert_awaited_once_with(
+        customer_id=customer_id,
+        source="pipedrive",
+        entity_type="organization",
+        external_id="12345",
+        field="company_name",
+        canonical_value="Acme AI",
+        source_value="Acme Compute",
+        policy=policy,
+    )

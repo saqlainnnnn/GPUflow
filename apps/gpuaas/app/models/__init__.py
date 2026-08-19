@@ -29,3 +29,7 @@ __all__ = [
     "InvoiceLineItem",
     "XeroConnection",
 ]
+
+from apps.gpuaas.app.models.customer_data_quality_audit import CustomerDataQualityAudit
+
+from apps.gpuaas.app.models.kyb_audit import KYBAudit
