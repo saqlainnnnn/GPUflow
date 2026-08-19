@@ -124,6 +124,36 @@ class XeroClient:
 
         return contacts[0]
 
+    async def list_contacts(
+        self,
+    ) -> list[dict[str, Any]]:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            response = await client.get(
+                f"{XERO_API_BASE}/Contacts",
+                headers=self._headers(),
+            )
+
+        if not response.is_success:
+            raise XeroAPIError(
+                response.status_code,
+                response.text,
+            )
+
+        contacts = response.json().get(
+            "Contacts",
+            [],
+        )
+
+        if contacts is None:
+            return []
+
+        if not isinstance(contacts, list):
+            raise RuntimeError(
+                "Xero contacts response contained invalid data"
+            )
+
+        return contacts
+
     async def get_contact(
         self,
         contact_id: str,

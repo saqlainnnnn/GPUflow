@@ -118,3 +118,68 @@ async def test_organization_handler_uses_stable_identity_when_email_missing():
         entity_type="organization",
         external_id="67890",
     )
+
+
+@pytest.mark.asyncio
+async def test_list_organizations():
+    from unittest.mock import AsyncMock, MagicMock, patch
+
+    from apps.integration_hub.app.integrations.pipedrive.client import (
+        PipedriveClient,
+    )
+
+    client = PipedriveClient(
+        company_domain="example",
+        api_token="token",
+    )
+
+    response = MagicMock()
+    response.raise_for_status = MagicMock()
+    response.json.return_value = {
+        "success": True,
+        "data": [
+            {
+                "id": 123,
+                "name": "Acme AI",
+            },
+            {
+                "id": 456,
+                "name": "Beta Compute",
+            },
+        ],
+    }
+
+    http_client = AsyncMock()
+    http_client.get.return_value = response
+
+    context_manager = MagicMock()
+    context_manager.__aenter__ = AsyncMock(
+        return_value=http_client,
+    )
+    context_manager.__aexit__ = AsyncMock(
+        return_value=None,
+    )
+
+    with patch(
+        "apps.integration_hub.app.integrations.pipedrive.client.httpx.AsyncClient",
+        return_value=context_manager,
+    ):
+        result = await client.list_organizations()
+
+    assert result == [
+        {
+            "id": 123,
+            "name": "Acme AI",
+        },
+        {
+            "id": 456,
+            "name": "Beta Compute",
+        },
+    ]
+
+    http_client.get.assert_awaited_once_with(
+        "https://example.pipedrive.com/api/v2/organizations",
+        params={
+            "api_token": "token",
+        },
+    )

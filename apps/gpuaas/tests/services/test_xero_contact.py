@@ -190,3 +190,63 @@ async def test_xero_client_get_contact():
     )
 
     response.is_success is True
+
+
+@pytest.mark.asyncio
+async def test_xero_client_list_contacts():
+    from unittest.mock import AsyncMock, MagicMock, patch
+
+    from apps.gpuaas.app.integrations.xero.client import XeroClient
+
+    client = XeroClient(
+        access_token="access-token",
+        tenant_id="tenant-123",
+    )
+
+    response = MagicMock()
+    response.is_success = True
+    response.json.return_value = {
+        "Contacts": [
+            {
+                "ContactID": "contact-123",
+                "Name": "Acme AI",
+            },
+            {
+                "ContactID": "contact-456",
+                "Name": "Beta Compute",
+            },
+        ]
+    }
+
+    http_client = AsyncMock()
+    http_client.get.return_value = response
+
+    context_manager = MagicMock()
+    context_manager.__aenter__ = AsyncMock(
+        return_value=http_client,
+    )
+    context_manager.__aexit__ = AsyncMock(
+        return_value=None,
+    )
+
+    with patch(
+        "apps.gpuaas.app.integrations.xero.client.httpx.AsyncClient",
+        return_value=context_manager,
+    ):
+        result = await client.list_contacts()
+
+    assert result == [
+        {
+            "ContactID": "contact-123",
+            "Name": "Acme AI",
+        },
+        {
+            "ContactID": "contact-456",
+            "Name": "Beta Compute",
+        },
+    ]
+
+    http_client.get.assert_awaited_once_with(
+        "https://api.xero.com/api.xro/2.0/Contacts",
+        headers=client._headers(),
+    )

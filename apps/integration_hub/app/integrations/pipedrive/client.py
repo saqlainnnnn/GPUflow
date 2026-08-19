@@ -14,6 +14,38 @@ class PipedriveClient:
         self.base_url = f"https://{company_domain}.pipedrive.com/api/v2"
         self.api_token = api_token
 
+    async def list_organizations(
+        self,
+    ) -> list[dict[str, Any]]:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(
+                f"{self.base_url}/organizations",
+                params={
+                    "api_token": self.api_token,
+                },
+            )
+
+        response.raise_for_status()
+
+        body = response.json()
+
+        if not body.get("success"):
+            raise RuntimeError(
+                f"Pipedrive API returned unsuccessful response: {body}"
+            )
+
+        data = body.get("data", [])
+
+        if data is None:
+            return []
+
+        if not isinstance(data, list):
+            raise RuntimeError(
+                "Pipedrive organizations response contained invalid data"
+            )
+
+        return data
+
     async def get_organization(
         self,
         organization_id: int,

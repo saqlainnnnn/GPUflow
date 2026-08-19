@@ -102,3 +102,32 @@ async def test_create_persists_identity():
     session.add.assert_called_once_with(identity)
     session.flush.assert_awaited_once()
     session.refresh.assert_awaited_once_with(identity)
+
+
+@pytest.mark.asyncio
+async def test_find_all_returns_all_customer_identities():
+    repository, session = build_repository()
+
+    identities = [
+        CustomerIdentity(
+            customer_id=uuid4(),
+            source="pipedrive",
+            entity_type="organization",
+            external_id="123",
+        ),
+        CustomerIdentity(
+            customer_id=uuid4(),
+            source="xero",
+            entity_type="contact",
+            external_id="456",
+        ),
+    ]
+
+    result_proxy = MagicMock()
+    result_proxy.scalars.return_value.all.return_value = identities
+    session.execute.return_value = result_proxy
+
+    result = await repository.find_all()
+
+    assert result == identities
+    session.execute.assert_awaited_once()

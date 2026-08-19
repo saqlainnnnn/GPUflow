@@ -173,6 +173,21 @@ class CustomerSourceReconciliation:
     missing: list[str]
     fields: dict[str, FieldReconciliation]
 
+    def classify_ownership(
+        self,
+        *,
+        policy,
+    ):
+        from apps.gpuaas.app.services.customer_field_ownership_classification import (
+            classify_reconciliation_fields,
+        )
+
+        return classify_reconciliation_fields(
+            fields=self.fields,
+            source=self.source,
+            policy=policy,
+        )
+
 
 def reconcile_customer_source(
     *,

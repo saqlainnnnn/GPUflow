@@ -2,11 +2,11 @@ from alembic.config import Config
 from alembic.script import ScriptDirectory
 
 
-MIGRATION_REVISION = "7e1c4a9b2d33"
-PARENT_REVISION = "5d7a9e4c2b11"
+MIGRATION_REVISION = "9b3e7f1c5a66"
+PARENT_REVISION = "8f2c6d1a4e55"
 
 
-def test_customer_identity_timestamp_fix_migration_exists():
+def test_customer_data_quality_issue_migration_exists():
     script = ScriptDirectory.from_config(
         Config("alembic.ini")
     )
@@ -19,7 +19,7 @@ def test_customer_identity_timestamp_fix_migration_exists():
     assert migration.revision == MIGRATION_REVISION
 
 
-def test_customer_identity_timestamp_fix_migration_declares_expected_parent():
+def test_customer_data_quality_issue_migration_has_expected_parent():
     script = ScriptDirectory.from_config(
         Config("alembic.ini")
     )

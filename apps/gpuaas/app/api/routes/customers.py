@@ -20,11 +20,32 @@ from apps.gpuaas.app.schemas.customer_reconciliation import (
 from apps.gpuaas.app.services.customer_reconciliation_service import (
     CustomerReconciliationService,
 )
+from apps.gpuaas.app.services.customer_data_quality_persistence import (
+    CustomerDataQualityPersistenceService,
+)
+from apps.gpuaas.app.services.customer_reconciliation_runner import (
+    CustomerReconciliationRunner,
+)
+from apps.gpuaas.app.services.customer_field_ownership_provider import (
+    CustomerFieldOwnershipProvider,
+)
+from apps.gpuaas.app.services.customer_reconciliation_factory import (
+    CustomerReconciliationFactory,
+)
+from apps.gpuaas.app.repositories.customer_data_quality import (
+    CustomerDataQualityRepository,
+)
+from apps.gpuaas.app.repositories.customer import (
+    CustomerRepository,
+)
 from apps.gpuaas.app.repositories.customer_identity import (
     CustomerIdentityRepository,
 )
 from apps.gpuaas.app.schemas.customer_summary import (
     CustomerSummaryResponse,
+)
+from apps.gpuaas.app.schemas.customer_reconciliation_run import (
+    CustomerReconciliationRunResponse,
 )
 from apps.gpuaas.app.services.customer import (
     CustomerAlreadyExistsError,
@@ -142,16 +163,27 @@ async def reconcile_customer_source(
     data: CustomerReconciliationRequest,
     session: AsyncSession = Depends(get_db),
 ) -> CustomerReconciliationResponse:
-    customer_repository = CustomerService(session)
-    customer = await customer_repository.get_customer(
-        customer_id
+    customer_repository = CustomerRepository(session)
+    identity_repository = CustomerIdentityRepository(session)
+    quality_repository = CustomerDataQualityRepository(session)
+
+    reconciler = CustomerReconciliationService(
+        customer_repository=customer_repository,
+        identity_repository=identity_repository,
     )
 
-    repository = CustomerIdentityRepository(session)
+    persistence = CustomerDataQualityPersistenceService(
+        repository=quality_repository,
+    )
 
-    service = CustomerReconciliationService(
-        customer_repository=customer_repository.repository,
-        identity_repository=repository,
+    runner = CustomerReconciliationRunner(
+        reconciler=reconciler,
+        persistence=persistence,
+    )
+
+    ownership_policy = (
+        CustomerFieldOwnershipProvider()
+        .for_customer()
     )
 
     class GenericSourceAdapter:
@@ -162,26 +194,32 @@ async def reconcile_customer_source(
             return source_record
 
     try:
-        result = await service.reconcile_identity(
+        result, _ = await runner.reconcile_and_persist(
             customer_id=customer_id,
             source=data.source,
             entity_type=data.entity_type,
             external_id=data.external_id,
             source_record=data.source_record,
             adapter=GenericSourceAdapter(),
+            ownership_policy=ownership_policy,
         )
+
+        await session.commit()
+
     except ValueError as exc:
-        from fastapi import HTTPException
+        await session.rollback()
+
+        detail = str(exc)
 
         status_code = (
             404
-            if "not found" in str(exc).lower()
+            if "not found" in detail.lower()
             else 409
         )
 
         raise HTTPException(
             status_code=status_code,
-            detail=str(exc),
+            detail=detail,
         ) from exc
 
     return CustomerReconciliationResponse(
@@ -285,3 +323,24 @@ async def get_customer(
         ) from exc
 
     return CustomerResponse.model_validate(customer)
+
+
+@router.post(
+    "/reconciliation/runs",
+    response_model=CustomerReconciliationRunResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def trigger_customer_reconciliation_run(
+    session: AsyncSession = Depends(get_db),
+) -> CustomerReconciliationRunResponse:
+    factory = CustomerReconciliationFactory(
+        session=session,
+    )
+
+    run_service = factory.build_run_service()
+
+    run = await run_service.run()
+
+    return CustomerReconciliationRunResponse.model_validate(
+        run
+    )
